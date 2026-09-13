@@ -1,5 +1,6 @@
 package com.ritik.gatewayservice.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
@@ -8,6 +9,21 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class GatewayRouteConfig {
 
+    @Value("${AUTH_SERVICE_URL:http://localhost:8081}")
+    private String authServiceUrl;
+
+    @Value("${CANDIDATE_SERVICE_URL:http://localhost:8082}")
+    private String candidateServiceUrl;
+
+    @Value("${INTERVIEW_SERVICE_URL:http://localhost:8083}")
+    private String interviewServiceUrl;
+
+    @Value("${RESUME_SERVICE_URL:http://localhost:8084}")
+    private String resumeServiceUrl;
+
+    @Value("${JOB_SERVICE_URL:http://localhost:8085}")
+    private String jobServiceUrl;
+
     @Bean
     public RouteLocator gatewayRoutes(RouteLocatorBuilder builder) {
 
@@ -15,23 +31,23 @@ public class GatewayRouteConfig {
 
                 .route("auth-service",
                         r -> r.path("/auth/**")
-                                .uri("http://localhost:8081"))
-                                
+                                .uri(authServiceUrl))
+
                 .route("candidate-service",
                         r -> r.path("/candidates/**")
-                                .uri("http://localhost:8082"))
+                                .uri(candidateServiceUrl))
 
                 .route("interview-service",
                         r -> r.path("/interviews/**")
-                                .uri("http://localhost:8083"))
+                                .uri(interviewServiceUrl))
 
                 .route("resume-service",
                         r -> r.path("/resume/**")
-                                .uri("http://localhost:8084"))
-                                
+                                .uri(resumeServiceUrl))
+
                 .route("job-service",
                         r -> r.path("/jobs/**")
-                                .uri("http://localhost:8085"))
+                                .uri(jobServiceUrl))
 
                 .build();
     }
