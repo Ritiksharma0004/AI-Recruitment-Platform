@@ -71,7 +71,7 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<Map<String, String>> forgotPassword(@RequestBody Map<String, String> request) {
+    public ResponseEntity<Map<String, Object>> forgotPassword(@RequestBody Map<String, String> request) {
         String email = request.get("email");
         return ResponseEntity.ok(authenticationService.triggerForgotPassword(email));
     }

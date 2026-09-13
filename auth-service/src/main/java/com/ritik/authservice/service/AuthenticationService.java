@@ -188,7 +188,7 @@ public class AuthenticationService {
         return "User " + user.getEmail() + " password forcefully reset by admin.";
     }
     
-    public Map<String, String> triggerForgotPassword(String email) {
+    public Map<String, Object> triggerForgotPassword(String email) {
         if (email == null || email.trim().isEmpty()) {
             throw new RuntimeException("Email address is required.");
         }
@@ -199,11 +199,18 @@ public class AuthenticationService {
         String code = String.format("%06d", new java.util.Random().nextInt(1000000));
         resetTokens.put(normalizedEmail, new ResetEntry(code, LocalDateTime.now().plusMinutes(15)));
         
-        emailService.sendPasswordResetEmail(normalizedEmail, code);
+        boolean emailSent = emailService.sendPasswordResetEmail(normalizedEmail, code);
         
-        Map<String, String> res = new HashMap<>();
-        res.put("message", "A 6-digit security reset key has been sent to " + normalizedEmail + ".");
+        Map<String, Object> res = new HashMap<>();
+        res.put("success", true);
         res.put("email", normalizedEmail);
+        res.put("emailSent", emailSent);
+        if (emailSent) {
+            res.put("message", "A 6-digit security reset key has been sent to " + normalizedEmail + ".");
+        } else {
+            res.put("message", "A 6-digit security reset key has been generated for " + normalizedEmail + ".");
+            res.put("devResetCode", code);
+        }
         return res;
     }
 
