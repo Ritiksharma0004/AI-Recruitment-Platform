@@ -42,23 +42,30 @@ public class AuthenticationService {
     private final Map<String, ResetEntry> resetTokens = new ConcurrentHashMap<>();
     private final Map<String, ResetEntry> registrationOtps = new ConcurrentHashMap<>();
 
-    public Map<String, String> sendRegistrationOtp(String email) {
+    public Map<String, Object> sendRegistrationOtp(String email) {
         if (email == null || email.trim().isEmpty()) {
             throw new RuntimeException("Valid email address is required");
         }
         String normalizedEmail = email.toLowerCase().trim();
         if (userRepository.existsByEmail(normalizedEmail)) {
-            throw new RuntimeException("An account with this email already exists.");
+            throw new RuntimeException("An account with this email already exists. Please log in instead.");
         }
 
         String otp = String.format("%06d", new SecureRandom().nextInt(1000000));
         registrationOtps.put(normalizedEmail, new ResetEntry(otp, LocalDateTime.now().plusMinutes(10)));
 
-        emailService.sendRegistrationOtpEmail(normalizedEmail, otp);
+        boolean emailSent = emailService.sendRegistrationOtpEmail(normalizedEmail, otp);
 
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "A 6-digit verification code has been dispatched to " + normalizedEmail);
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
         response.put("email", normalizedEmail);
+        response.put("emailSent", emailSent);
+        if (emailSent) {
+            response.put("message", "A 6-digit verification code has been dispatched to " + normalizedEmail);
+        } else {
+            response.put("message", "A 6-digit verification code was generated for " + normalizedEmail);
+            response.put("devOtp", otp);
+        }
         return response;
     }
 
@@ -82,14 +89,14 @@ public class AuthenticationService {
 
         ResetEntry entry = registrationOtps.get(normalizedEmail);
         if (entry == null) {
-            throw new RuntimeException("No active verification code found for this email. Please request an OTP.");
+            throw new RuntimeException("No active verification code found for this email. Please click 'Send Code'.");
         }
         if (LocalDateTime.now().isAfter(entry.expiry)) {
             registrationOtps.remove(normalizedEmail);
-            throw new RuntimeException("Verification code has expired. Please request a new OTP.");
+            throw new RuntimeException("Verification code has expired. Please request a new code.");
         }
         if (!entry.code.equals(request.getOtp().trim())) {
-            throw new RuntimeException("Invalid verification code (OTP). Please check and try again.");
+            throw new RuntimeException("Invalid verification code (OTP). Please check your code and try again.");
         }
 
         registrationOtps.remove(normalizedEmail);

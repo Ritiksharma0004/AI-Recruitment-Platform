@@ -1,6 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bot, Mail, Lock, User, ArrowRight, Loader, CheckCircle, XCircle, Sparkles, ArrowLeft, ShieldCheck, Eye, EyeOff, KeyRound } from 'lucide-react';
+import { 
+  Bot, 
+  Mail, 
+  Lock, 
+  User, 
+  ArrowRight, 
+  Loader, 
+  CheckCircle, 
+  XCircle, 
+  Sparkles, 
+  ArrowLeft, 
+  ShieldCheck, 
+  Eye, 
+  EyeOff, 
+  KeyRound, 
+  Send 
+} from 'lucide-react';
 import { authService } from '../services/authService';
 
 const Register = () => {
@@ -14,6 +30,7 @@ const Register = () => {
   });
 
   const [otp, setOtp] = useState('');
+  const [devOtp, setDevOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [otpCountdown, setOtpCountdown] = useState(0);
@@ -32,16 +49,39 @@ const Register = () => {
     return () => clearTimeout(timer);
   }, [otpCountdown]);
 
+  const extractErrorMessage = (err) => {
+    if (err.response?.data) {
+      const data = err.response.data;
+      if (typeof data === 'string') return data;
+      if (data.message) return data.message;
+      if (data.error) return data.error;
+    }
+    return err.message || 'An unexpected error occurred. Please try again.';
+  };
+
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+
+    // If user changes email, reset OTP verification status
+    if (name === 'email' && otpSent) {
+      setOtpSent(false);
+      setOtp('');
+      setDevOtp('');
+      setOtpCountdown(0);
+    }
   };
 
   const handleSendOtp = async () => {
-    if (!formData.email || !formData.email.includes('@')) {
-      setPopup({ show: true, type: 'error', message: 'Please enter a valid email address first.' });
+    if (!formData.email || !formData.email.trim() || !formData.email.includes('@')) {
+      setPopup({ 
+        show: true, 
+        type: 'error', 
+        message: 'Please enter a valid candidate email address first.' 
+      });
       return;
     }
 
@@ -49,20 +89,25 @@ const Register = () => {
     setPopup({ show: false, type: '', message: '' });
 
     try {
-      await authService.sendRegistrationOtp(formData.email);
+      const res = await authService.sendRegistrationOtp(formData.email.trim());
       setOtpSent(true);
       setOtpCountdown(60);
+
+      if (res?.devOtp) {
+        setDevOtp(res.devOtp);
+      }
+
       setPopup({
         show: true,
         type: 'success',
-        message: `A 6-digit verification code has been sent to ${formData.email}. Please check your inbox (and spam folder).`
+        message: res?.message || `A 6-digit verification code has been dispatched to ${formData.email.trim()}. Please check your inbox and spam folder.`
       });
     } catch (err) {
-      const errorMessage = err.response?.data?.message || err.response?.data || err.message || 'Failed to dispatch verification code. Please try again.';
+      const errMsg = extractErrorMessage(err);
       setPopup({
         show: true,
         type: 'error',
-        message: typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage)
+        message: errMsg
       });
     } finally {
       setIsSendingOtp(false);
@@ -92,10 +137,10 @@ const Register = () => {
 
     try {
       const payload = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        username: formData.username,
-        email: formData.email,
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        username: formData.username.trim(),
+        email: formData.email.trim(),
         password: formData.password,
         otp: otp.trim()
       };
@@ -105,7 +150,7 @@ const Register = () => {
       setPopup({ 
         show: true, 
         type: 'success', 
-        message: 'Candidate Profile verified & generated in database. Redirecting to sign in...' 
+        message: 'Candidate Profile verified & successfully enrolled in database. Redirecting to sign in...' 
       });
       
       setTimeout(() => {
@@ -113,8 +158,12 @@ const Register = () => {
       }, 1600);
 
     } catch (err) {
-      const errorMessage = err.response?.data?.message || err.response?.data || err.message || 'Registration failed. Check your data.';
-      setPopup({ show: true, type: 'error', message: typeof errorMessage === "string" ? errorMessage : JSON.stringify(errorMessage) });
+      const errMsg = extractErrorMessage(err);
+      setPopup({ 
+        show: true, 
+        type: 'error', 
+        message: errMsg 
+      });
       setIsLoading(false);
     }
   };
@@ -153,7 +202,7 @@ const Register = () => {
 
           <div className="mb-8 text-center">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.03] border border-white/[0.06] text-slate-400 text-[11px] font-mono mb-3">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> RECRUITMENT NETWORK ENROLLMENT
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> CANDIDATE IDENTITY VERIFICATION
             </div>
             <h1 className="text-2xl sm:text-3xl font-light text-white tracking-tight">Candidate Profile Creation</h1>
             <p className="text-xs text-slate-400 font-light mt-1.5">Setup your verified credentials to access autonomous AI resume scoring.</p>
@@ -208,13 +257,13 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Email Address with OTP Trigger */}
+            {/* Candidate Email */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block">Candidate Email Address</label>
                 <span className="text-[10px] text-indigo-400 font-mono">Requires OTP verification</span>
               </div>
-              <div className="relative flex items-center">
+              <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                   <Mail className="w-4 h-4" />
                 </div>
@@ -224,55 +273,107 @@ const Register = () => {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-28 py-2.5 bg-[#090c14] border border-white/[0.07] rounded-xl text-sm text-slate-200 placeholder:text-slate-600 font-light focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/30 transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 bg-[#090c14] border border-white/[0.07] rounded-xl text-sm text-slate-200 placeholder:text-slate-600 font-light focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/30 transition-all"
                   placeholder="ritik.sharma@example.com"
                 />
-                <button
-                  type="button"
-                  onClick={handleSendOtp}
-                  disabled={isSendingOtp || otpCountdown > 0 || !formData.email}
-                  className="absolute right-1.5 px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs font-normal transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 whitespace-nowrap"
-                >
-                  {isSendingOtp ? (
-                    <>
-                      <Loader className="w-3 h-3 animate-spin" /> Sending...
-                    </>
-                  ) : otpCountdown > 0 ? (
-                    `Resend (${otpCountdown}s)`
-                  ) : otpSent ? (
-                    'Resend Code'
-                  ) : (
-                    'Send OTP'
-                  )}
-                </button>
               </div>
             </div>
 
-            {/* OTP Verification Code Input (Displayed if OTP was sent or user is verifying) */}
-            {otpSent && (
-              <div className="space-y-1.5 p-4 rounded-2xl bg-indigo-950/30 border border-indigo-500/30 animate-in fade-in slide-in-from-top-2 duration-300">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-mono uppercase tracking-wider text-indigo-300 flex items-center gap-1.5">
-                    <KeyRound className="w-3.5 h-3.5 text-indigo-400" /> 6-Digit Email Verification Code
-                  </label>
-                  <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
-                    <CheckCircle className="w-3 h-3" /> Code Sent
-                  </span>
+            {/* Send OTP & Verification UI Card */}
+            {!otpSent ? (
+              <div className="p-3.5 rounded-2xl bg-indigo-950/20 border border-indigo-500/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
+                    <KeyRound className="w-4 h-4 text-indigo-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-normal text-slate-200">Email Verification Required</p>
+                    <p className="text-[11px] text-slate-400 font-light">Dispatches a 6-digit code to verify your candidate inbox</p>
+                  </div>
                 </div>
-                <div className="relative">
+                <button
+                  type="button"
+                  onClick={handleSendOtp}
+                  disabled={isSendingOtp || !formData.email}
+                  className="w-full sm:w-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-medium transition-all shadow-[0_0_15px_rgba(99,102,241,0.25)] hover:shadow-[0_0_25px_rgba(99,102,241,0.4)] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 whitespace-nowrap"
+                >
+                  {isSendingOtp ? (
+                    <>
+                      <Loader className="w-3.5 h-3.5 animate-spin" /> Dispatching...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" /> Send Verification Code
+                    </>
+                  )}
+                </button>
+              </div>
+            ) : (
+              <div className="p-4 rounded-2xl bg-indigo-950/30 border border-indigo-500/40 space-y-3 animate-in fade-in duration-300">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-xs font-medium text-white">6-Digit Code Dispatched</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSendOtp}
+                    disabled={isSendingOtp || otpCountdown > 0}
+                    className="text-[11px] text-indigo-400 hover:text-indigo-300 transition-colors disabled:text-slate-500 disabled:cursor-not-allowed flex items-center gap-1"
+                  >
+                    {isSendingOtp ? (
+                      <>
+                        <Loader className="w-3 h-3 animate-spin" /> Sending...
+                      </>
+                    ) : otpCountdown > 0 ? (
+                      `Resend code in ${otpCountdown}s`
+                    ) : (
+                      'Resend Code'
+                    )}
+                  </button>
+                </div>
+
+                <div className="space-y-1">
                   <input 
                     type="text"
                     maxLength={6}
                     required
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                    className="w-full px-4 py-2.5 bg-[#090c14] border border-indigo-500/40 rounded-xl text-lg text-white font-mono tracking-[0.35em] text-center placeholder:text-slate-600 placeholder:tracking-normal placeholder:font-sans placeholder:text-xs focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400/40 transition-all"
+                    className="w-full px-4 py-3 bg-[#090c14] border border-indigo-500/50 rounded-xl text-xl text-white font-mono tracking-[0.45em] text-center placeholder:text-slate-600 placeholder:tracking-normal placeholder:font-sans placeholder:text-xs focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 transition-all"
                     placeholder="Enter 6-digit OTP"
                   />
                 </div>
-                <p className="text-[11px] text-slate-400 font-light mt-1 leading-relaxed">
-                  We sent a 6-digit one-time password to <span className="text-indigo-300 font-medium">{formData.email}</span>. Valid for 10 minutes.
-                </p>
+
+                {devOtp && (
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-xs">
+                    <span className="text-slate-300 font-mono text-[11px]">
+                      Verification Code: <strong className="text-indigo-300">{devOtp}</strong>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setOtp(devOtp)}
+                      className="text-[10px] text-indigo-400 hover:text-indigo-200 underline font-mono"
+                    >
+                      Auto-fill
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between text-[11px] text-slate-400 font-light pt-1">
+                  <span>Sent to <strong className="text-slate-200">{formData.email}</strong> (valid for 10 min)</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOtpSent(false);
+                      setOtp('');
+                      setDevOtp('');
+                    }}
+                    className="text-slate-500 hover:text-slate-300 text-[10px] underline"
+                  >
+                    Change Email
+                  </button>
+                </div>
               </div>
             )}
 
@@ -357,7 +458,7 @@ const Register = () => {
               {popup.type === 'success' ? <CheckCircle className="w-6 h-6" /> : <XCircle className="w-6 h-6" />}
             </div>
             <h3 className="text-lg font-normal text-white mb-1.5">
-              {popup.type === 'success' ? 'Profile Verification' : 'Registration Alert'}
+              {popup.type === 'success' ? 'Notification' : 'Registration Alert'}
             </h3>
             <p className="text-xs text-slate-400 font-light mb-6 leading-relaxed">{popup.message}</p>
             

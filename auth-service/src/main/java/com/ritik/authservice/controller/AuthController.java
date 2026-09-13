@@ -21,7 +21,7 @@ public class AuthController {
     private final AuthenticationService authenticationService;
 
     @PostMapping("/send-registration-otp")
-    public ResponseEntity<Map<String, String>> sendRegistrationOtp(@RequestBody Map<String, String> request) {
+    public ResponseEntity<Map<String, Object>> sendRegistrationOtp(@RequestBody Map<String, String> request) {
         String email = request.get("email");
         return ResponseEntity.ok(authenticationService.sendRegistrationOtp(email));
     }

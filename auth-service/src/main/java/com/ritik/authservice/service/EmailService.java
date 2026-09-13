@@ -1,6 +1,5 @@
 package com.ritik.authservice.service;
 
-import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,13 +18,13 @@ public class EmailService {
     @Value("${spring.mail.username:}")
     private String fromEmail;
 
-    public void sendRegistrationOtpEmail(String toEmail, String otp) {
+    public boolean sendRegistrationOtpEmail(String toEmail, String otp) {
         if (fromEmail == null || fromEmail.trim().isEmpty()) {
             log.warn("==========================================================================");
             log.warn("⚠️ SMTP NOT CONFIGURED: spring.mail.username is empty in application.properties.");
             log.warn("🔑 [SECURE BACKEND LOG] Registration OTP for Candidate {}: {}", toEmail, otp);
             log.warn("==========================================================================");
-            return;
+            return false;
         }
 
         try {
@@ -62,24 +61,25 @@ public class EmailService {
             helper.setText(htmlBody, true);
             mailSender.send(message);
             log.info("✅ Registration OTP dispatched via SMTP to {}", toEmail);
+            return true;
 
-        } catch (MessagingException e) {
-            log.error("Failed to build or send registration OTP email to {}: {}", toEmail, e.getMessage());
-            throw new RuntimeException("Failed to dispatch verification email via SMTP. Please verify mail server settings.");
         } catch (Exception e) {
-            log.error("Unexpected error sending OTP to {}: {}", toEmail, e.getMessage());
-            throw new RuntimeException("SMTP delivery error: " + e.getMessage());
+            log.error("⚠️ SMTP delivery failed for {}: {}. Logged fallback OTP.", toEmail, e.getMessage());
+            log.warn("==========================================================================");
+            log.warn("🔑 [SECURE BACKEND LOG] Fallback Registration OTP for Candidate {}: {}", toEmail, otp);
+            log.warn("==========================================================================");
+            return false;
         }
     }
 
-    public void sendPasswordResetEmail(String toEmail, String resetCode) {
+    public boolean sendPasswordResetEmail(String toEmail, String resetCode) {
         if (fromEmail == null || fromEmail.trim().isEmpty()) {
             log.warn("==========================================================================");
             log.warn("⚠️ SMTP NOT CONFIGURED: spring.mail.username is empty in application.properties.");
             log.warn("🔑 [SECURE BACKEND LOG] One-Time Reset Key for {}: {}", toEmail, resetCode);
             log.warn("To send real emails, set your Gmail and 16-character App Password in application.properties.");
             log.warn("==========================================================================");
-            return;
+            return false;
         }
 
         try {
@@ -100,10 +100,10 @@ public class EmailService {
                     + "    </div>"
                     + "    <h2 style=\"font-size: 17px; font-weight: 500; color: #ffffff; margin-bottom: 12px;\">Password Reset Request</h2>"
                     + "    <p style=\"font-size: 13px; color: #94a3b8; line-height: 1.6; margin-bottom: 24px;\">"
-                    + "      We received a request to reset the security credentials for your account (<strong>\" + toEmail + \"</strong>). Use the one-time verification code below to set a new password:"
+                    + "      We received a request to reset the security credentials for your account (<strong>" + toEmail + "</strong>). Use the one-time verification code below to set a new password:"
                     + "    </p>"
                     + "    <div style=\"background: #090c16; border: 1px solid #312e81; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px;\">"
-                    + "      <span style=\"font-size: 32px; font-family: 'Courier New', monospace; font-weight: bold; letter-spacing: 8px; color: #818cf8;\">\" + resetCode + \"</span>"
+                    + "      <span style=\"font-size: 32px; font-family: 'Courier New', monospace; font-weight: bold; letter-spacing: 8px; color: #818cf8;\">" + resetCode + "</span>"
                     + "    </div>"
                     + "    <p style=\"font-size: 12px; color: #64748b; line-height: 1.5; margin-bottom: 0;\">"
                     + "      ⏳ <strong>This key expires in 15 minutes.</strong><br/>"
@@ -116,13 +116,14 @@ public class EmailService {
             helper.setText(htmlBody, true);
             mailSender.send(message);
             log.info("✅ Password reset email dispatched via SMTP to {}", toEmail);
+            return true;
 
-        } catch (MessagingException e) {
-            log.error("Failed to build or send password reset email to {}: {}", toEmail, e.getMessage());
-            throw new RuntimeException("Failed to dispatch reset email via SMTP. Please check mail configuration.");
         } catch (Exception e) {
-            log.error("Unexpected error sending email to {}: {}", toEmail, e.getMessage());
-            throw new RuntimeException("SMTP delivery error: " + e.getMessage());
+            log.error("⚠️ SMTP delivery failed for password reset {}: {}", toEmail, e.getMessage());
+            log.warn("==========================================================================");
+            log.warn("🔑 [SECURE BACKEND LOG] Fallback Password Reset Key for {}: {}", toEmail, resetCode);
+            log.warn("==========================================================================");
+            return false;
         }
     }
 }
