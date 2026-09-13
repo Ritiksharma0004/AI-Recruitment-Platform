@@ -29,6 +29,11 @@ apiClient.interceptors.request.use(
         console.error('Failed to parse stored user info', e);
       }
     }
+
+    // Never enforce application/json on multipart FormData; allow browser to attach boundary
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
     
     return config;
   },
@@ -61,6 +66,16 @@ export const aiClient = axios.create({
   baseURL: AI_SERVICE_URL,
   timeout: 75000,
 });
+
+aiClient.interceptors.request.use(
+  (config) => {
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 aiClient.interceptors.response.use(
   (response) => response,

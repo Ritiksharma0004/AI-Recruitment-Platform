@@ -5,6 +5,7 @@ import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
@@ -41,24 +42,17 @@ public class JwtAuthenticationFilter
         if (authHeader == null
                 || !authHeader.startsWith("Bearer ")) {
 
-            return Mono.error(
-                    new RuntimeException(
-                            "Missing JWT Token"
-                    )
-            );
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete();
         }
 
-        System.out.println("JWT FILTER EXECUTED");
         String token =
                 authHeader.substring(7);
 
         if (!jwtUtil.validateToken(token)) {
 
-            return Mono.error(
-                    new RuntimeException(
-                            "Invalid JWT Token"
-                    )
-            );
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete();
         }
 
         Long userId =
@@ -69,10 +63,6 @@ public class JwtAuthenticationFilter
 
         String email =
                 jwtUtil.extractEmail(token);
-
-        System.out.println("UserId = " + userId);
-        System.out.println("Role = " + role);
-        System.out.println("Email = " + email);
 
         ServerHttpRequest request =
                 exchange.getRequest()

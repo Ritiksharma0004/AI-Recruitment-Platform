@@ -120,9 +120,7 @@ export const jobService = {
     const formData = new FormData();
     formData.append('job_description', jobDescription);
     formData.append('file', file);
-    const response = await aiClient.post('/optimize-resume-upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+    const response = await aiClient.post('/optimize-resume-upload', formData);
     return response.data;
   }
 };

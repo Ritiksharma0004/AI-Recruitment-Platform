@@ -1841,7 +1841,14 @@ const CandidatesTab = () => {
 
             <div className="pt-6 mt-6 border-t border-white/[0.06] flex items-center justify-between">
               <button
-                onClick={() => jobService.downloadCandidateResume(viewingResumeModal.app.userId, `${candidateName}_Resume.pdf`)}
+                onClick={() => {
+                  const dossierCandidateName = formatName(
+                    viewingResumeModal.profile?.parsed?.name,
+                    'Candidate_' + (viewingResumeModal.app?.userId || 'Applicant'),
+                    viewingResumeModal.profile?.parsed?.email
+                  );
+                  jobService.downloadCandidateResume(viewingResumeModal.app.userId, dossierCandidateName + '_Resume.pdf');
+                }}
                 className="px-4 py-2 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 rounded-xl text-xs font-normal transition-all flex items-center gap-1.5"
               >
                 <Download className="w-3.5 h-3.5" /> Download Original PDF
