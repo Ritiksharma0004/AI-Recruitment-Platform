@@ -1,0 +1,21 @@
+.idea/
+target/
+*.iml
+
+# Python
+**/.venv/
+**/__pycache__/
+*.pyc
+
+# Environment files
+**/.env
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# Resumes and Uploads
+uploads/
+**/uploads/
+*.pdf
