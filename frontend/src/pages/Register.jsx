@@ -30,7 +30,6 @@ const Register = () => {
   });
 
   const [otp, setOtp] = useState('');
-  const [devOtp, setDevOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [otpCountdown, setOtpCountdown] = useState(0);
@@ -70,7 +69,6 @@ const Register = () => {
     if (name === 'email' && otpSent) {
       setOtpSent(false);
       setOtp('');
-      setDevOtp('');
       setOtpCountdown(0);
     }
   };
@@ -92,10 +90,6 @@ const Register = () => {
       const res = await authService.sendRegistrationOtp(formData.email.trim());
       setOtpSent(true);
       setOtpCountdown(60);
-
-      if (res?.devOtp) {
-        setDevOtp(res.devOtp);
-      }
 
       setPopup({
         show: true,
@@ -150,7 +144,7 @@ const Register = () => {
       setPopup({ 
         show: true, 
         type: 'success', 
-        message: 'Candidate Profile verified & successfully enrolled in database. Redirecting to sign in...' 
+        message: 'Candidate Profile verified & successfully registered. Redirecting to sign in...' 
       });
       
       setTimeout(() => {
@@ -345,21 +339,6 @@ const Register = () => {
                   />
                 </div>
 
-                {devOtp && (
-                  <div className="flex items-center justify-between p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-xs">
-                    <span className="text-slate-300 font-mono text-[11px]">
-                      Verification Code: <strong className="text-indigo-300">{devOtp}</strong>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setOtp(devOtp)}
-                      className="text-[10px] text-indigo-400 hover:text-indigo-200 underline font-mono"
-                    >
-                      Auto-fill
-                    </button>
-                  </div>
-                )}
-
                 <div className="flex items-center justify-between text-[11px] text-slate-400 font-light pt-1">
                   <span>Sent to <strong className="text-slate-200">{formData.email}</strong> (valid for 10 min)</span>
                   <button
@@ -367,7 +346,6 @@ const Register = () => {
                     onClick={() => {
                       setOtpSent(false);
                       setOtp('');
-                      setDevOtp('');
                     }}
                     className="text-slate-500 hover:text-slate-300 text-[10px] underline"
                   >

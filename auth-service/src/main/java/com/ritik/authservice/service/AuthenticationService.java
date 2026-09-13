@@ -10,6 +10,7 @@ import com.ritik.authservice.repository.UserRepository;
 import com.ritik.authservice.role.Role;
 import com.ritik.authservice.security.JwtService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService {
@@ -31,16 +33,18 @@ public class AuthenticationService {
     private final JwtService jwtService;
     private final EmailService emailService;
 
-    private static class ResetEntry {
-        final String code;
+    // Secure in-memory token/OTP entry storing salted BCrypt hash of the code
+    private static class SecureCodeEntry {
+        final String hashedCode;
         final LocalDateTime expiry;
-        ResetEntry(String code, LocalDateTime expiry) {
-            this.code = code;
+        SecureCodeEntry(String hashedCode, LocalDateTime expiry) {
+            this.hashedCode = hashedCode;
             this.expiry = expiry;
         }
     }
-    private final Map<String, ResetEntry> resetTokens = new ConcurrentHashMap<>();
-    private final Map<String, ResetEntry> registrationOtps = new ConcurrentHashMap<>();
+
+    private final Map<String, SecureCodeEntry> resetTokens = new ConcurrentHashMap<>();
+    private final Map<String, SecureCodeEntry> registrationOtps = new ConcurrentHashMap<>();
 
     public Map<String, Object> sendRegistrationOtp(String email) {
         if (email == null || email.trim().isEmpty()) {
@@ -51,21 +55,23 @@ public class AuthenticationService {
             throw new RuntimeException("An account with this email already exists. Please log in instead.");
         }
 
-        String otp = String.format("%06d", new SecureRandom().nextInt(1000000));
-        registrationOtps.put(normalizedEmail, new ResetEntry(otp, LocalDateTime.now().plusMinutes(10)));
+        // Generate cryptographically secure 6-digit OTP
+        String rawOtp = String.format("%06d", new SecureRandom().nextInt(1000000));
+        
+        // Store only BCrypt hashed OTP in server memory for 10 minutes
+        registrationOtps.put(normalizedEmail, new SecureCodeEntry(passwordEncoder.encode(rawOtp), LocalDateTime.now().plusMinutes(10)));
 
-        boolean emailSent = emailService.sendRegistrationOtpEmail(normalizedEmail, otp);
+        boolean emailSent = emailService.sendRegistrationOtpEmail(normalizedEmail, rawOtp);
+
+        if (!emailSent) {
+            log.error("Failed to send registration OTP email to {}", normalizedEmail);
+            throw new RuntimeException("Unable to send verification email. Mail delivery service is currently unavailable.");
+        }
 
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
         response.put("email", normalizedEmail);
-        response.put("emailSent", emailSent);
-        if (emailSent) {
-            response.put("message", "A 6-digit verification code has been dispatched to " + normalizedEmail);
-        } else {
-            response.put("message", "A 6-digit verification code was generated for " + normalizedEmail);
-            response.put("devOtp", otp);
-        }
+        response.put("message", "A 6-digit verification code has been dispatched to " + normalizedEmail);
         return response;
     }
 
@@ -87,18 +93,19 @@ public class AuthenticationService {
             throw new RuntimeException("6-digit email verification code (OTP) is required");
         }
 
-        ResetEntry entry = registrationOtps.get(normalizedEmail);
+        SecureCodeEntry entry = registrationOtps.get(normalizedEmail);
         if (entry == null) {
-            throw new RuntimeException("No active verification code found for this email. Please click 'Send Code'.");
+            throw new RuntimeException("No active verification code found for this email. Please request a new code.");
         }
         if (LocalDateTime.now().isAfter(entry.expiry)) {
             registrationOtps.remove(normalizedEmail);
             throw new RuntimeException("Verification code has expired. Please request a new code.");
         }
-        if (!entry.code.equals(request.getOtp().trim())) {
+        if (!passwordEncoder.matches(request.getOtp().trim(), entry.hashedCode)) {
             throw new RuntimeException("Invalid verification code (OTP). Please check your code and try again.");
         }
 
+        // Code matched; purge from memory immediately
         registrationOtps.remove(normalizedEmail);
         request.setEmail(normalizedEmail);
 
@@ -196,21 +203,20 @@ public class AuthenticationService {
         User user = userRepository.findByEmail(normalizedEmail)
                 .orElseThrow(() -> new RuntimeException("No account registered with email: " + email));
                 
-        String code = String.format("%06d", new java.util.Random().nextInt(1000000));
-        resetTokens.put(normalizedEmail, new ResetEntry(code, LocalDateTime.now().plusMinutes(15)));
+        String rawCode = String.format("%06d", new SecureRandom().nextInt(1000000));
+        resetTokens.put(normalizedEmail, new SecureCodeEntry(passwordEncoder.encode(rawCode), LocalDateTime.now().plusMinutes(15)));
         
-        boolean emailSent = emailService.sendPasswordResetEmail(normalizedEmail, code);
+        boolean emailSent = emailService.sendPasswordResetEmail(normalizedEmail, rawCode);
         
+        if (!emailSent) {
+            log.error("Failed to send password reset email to {}", normalizedEmail);
+            throw new RuntimeException("Unable to deliver password reset email. Mail delivery service is currently unavailable.");
+        }
+
         Map<String, Object> res = new HashMap<>();
         res.put("success", true);
         res.put("email", normalizedEmail);
-        res.put("emailSent", emailSent);
-        if (emailSent) {
-            res.put("message", "A 6-digit security reset key has been sent to " + normalizedEmail + ".");
-        } else {
-            res.put("message", "A 6-digit security reset key has been generated for " + normalizedEmail + ".");
-            res.put("devResetCode", code);
-        }
+        res.put("message", "A 6-digit security reset key has been sent to " + normalizedEmail + ".");
         return res;
     }
 
@@ -226,7 +232,7 @@ public class AuthenticationService {
         }
 
         String normalizedEmail = email.trim().toLowerCase();
-        ResetEntry entry = resetTokens.get(normalizedEmail);
+        SecureCodeEntry entry = resetTokens.get(normalizedEmail);
         if (entry == null) {
             throw new RuntimeException("No active reset request found for this email. Please request a new code.");
         }
@@ -234,7 +240,7 @@ public class AuthenticationService {
             resetTokens.remove(normalizedEmail);
             throw new RuntimeException("Reset code has expired. Please request a new one.");
         }
-        if (!entry.code.equals(resetCode.trim())) {
+        if (!passwordEncoder.matches(resetCode.trim(), entry.hashedCode)) {
             throw new RuntimeException("Invalid verification code. Please check and try again.");
         }
 

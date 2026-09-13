@@ -20,6 +20,11 @@ public class AuthController {
 
     private final AuthenticationService authenticationService;
 
+    @GetMapping("/health")
+    public ResponseEntity<Map<String, String>> health() {
+        return ResponseEntity.ok(Map.of("status", "UP", "service", "auth-service"));
+    }
+
     @PostMapping("/send-registration-otp")
     public ResponseEntity<Map<String, Object>> sendRegistrationOtp(@RequestBody Map<String, String> request) {
         String email = request.get("email");
