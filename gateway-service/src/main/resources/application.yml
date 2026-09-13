@@ -3,6 +3,10 @@ spring:
     name: gateway-service
   codec:
     max-in-memory-size: 25MB
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
 
 server:
   port: 9090

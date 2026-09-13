@@ -31,22 +31,27 @@ public class GatewayRouteConfig {
 
                 .route("auth-service",
                         r -> r.path("/auth/**")
+                                .filters(f -> f.dedupeResponseHeader("Access-Control-Allow-Origin Access-Control-Allow-Credentials", "RETAIN_FIRST"))
                                 .uri(authServiceUrl))
 
                 .route("candidate-service",
                         r -> r.path("/candidates/**")
+                                .filters(f -> f.dedupeResponseHeader("Access-Control-Allow-Origin Access-Control-Allow-Credentials", "RETAIN_FIRST"))
                                 .uri(candidateServiceUrl))
 
                 .route("interview-service",
                         r -> r.path("/interviews/**")
+                                .filters(f -> f.dedupeResponseHeader("Access-Control-Allow-Origin Access-Control-Allow-Credentials", "RETAIN_FIRST"))
                                 .uri(interviewServiceUrl))
 
                 .route("resume-service",
                         r -> r.path("/resume/**")
+                                .filters(f -> f.dedupeResponseHeader("Access-Control-Allow-Origin Access-Control-Allow-Credentials", "RETAIN_FIRST"))
                                 .uri(resumeServiceUrl))
 
                 .route("job-service",
                         r -> r.path("/jobs/**")
+                                .filters(f -> f.dedupeResponseHeader("Access-Control-Allow-Origin Access-Control-Allow-Credentials", "RETAIN_FIRST"))
                                 .uri(jobServiceUrl))
 
                 .build();
