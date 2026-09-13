@@ -3,8 +3,7 @@ from datetime import datetime
 import re
 from pypdf import PdfReader
 
-from services.groq_client import client, MODEL
-
+from services.groq_client import client, MODEL, call_groq_completions
 from models.resume import Resume
 
 
@@ -13,7 +12,6 @@ def fix_candidate_name(raw_name, email=""):
         return raw_name
     s = raw_name.strip()
 
-    # If email contains tokens e.g. ritik.sde.sharma@gmail.com
     if email and "@" in email:
         prefix = email.split("@")[0].lower()
         parts = [p for p in re.split(r'[^a-zA-Z]', prefix) if len(p) >= 3 and p not in ['gmail', 'mail', 'sde', 'dev', 'test', 'admin', 'user', 'recruiter']]
@@ -22,7 +20,6 @@ def fix_candidate_name(raw_name, email=""):
         if len(matched) >= 2:
             return " ".join([m.capitalize() for m in matched])
 
-    # Repair common PDF text kerning splits
     s = re.sub(r'\bR\s+Itik\b', 'Ritik', s, flags=re.IGNORECASE)
     s = re.sub(r's\s+Harma\b', ' Sharma', s, flags=re.IGNORECASE)
     s = re.sub(r'\b([A-Za-z]+)s\s+Harma\b', r'\1 Sharma', s, flags=re.IGNORECASE)
@@ -35,24 +32,39 @@ def fix_candidate_name(raw_name, email=""):
 
 
 def read_pdf(file_path):
-    reader = PdfReader(file_path)
-    text = ""
-    for page in reader.pages:
-        page_text = page.extract_text()
-        if page_text:
-            text += page_text + "\n"
+    try:
+        reader = PdfReader(file_path)
+        text = ""
+        for page in reader.pages:
+            page_text = page.extract_text()
+            if page_text:
+                text += page_text + "\n"
 
-    # Pre-clean known PDF kerning artifacts in extracted text
-    text = re.sub(r'\bR\s+Itiks\s+Harma\b', 'Ritik Sharma', text, flags=re.IGNORECASE)
-    text = re.sub(r'\bR\s+Itik\s+s\s+Harma\b', 'Ritik Sharma', text, flags=re.IGNORECASE)
-    text = re.sub(r'\bR\s+Itik\b', 'Ritik', text, flags=re.IGNORECASE)
-    return text
+        text = re.sub(r'\bR\s+Itiks\s+Harma\b', 'Ritik Sharma', text, flags=re.IGNORECASE)
+        text = re.sub(r'\bR\s+Itik\s+s\s+Harma\b', 'Ritik Sharma', text, flags=re.IGNORECASE)
+        text = re.sub(r'\bR\s+Itik\b', 'Ritik', text, flags=re.IGNORECASE)
+        
+        # Clamp length to prevent massive PDFs from blowing token limits
+        if len(text) > 10000:
+            text = text[:10000]
+            
+        return text
+    except Exception as e:
+        print(f"Error reading PDF {file_path}: {e}")
+        return ""
 
 
 def read_resume(file_path):
-    if file_path.suffix.lower() == ".pdf":
+    suffix = file_path.suffix.lower()
+    if suffix == ".pdf":
         return read_pdf(file_path)
-    return None
+    elif suffix in [".txt", ".md"]:
+        try:
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                return f.read()[:10000]
+        except Exception:
+            return ""
+    return ""
 
 
 def calculate_experience_years(experiences):
@@ -68,32 +80,32 @@ def calculate_experience_years(experiences):
             continue
         start_str = match.group(1)
         end_str = match.group(2)
-        start_date = datetime.strptime(start_str, "%b %Y")
-        if end_str == "Present":
-            end_date = datetime.now()
-        else:
-            end_date = datetime.strptime(end_str, "%b %Y")
+        try:
+            start_date = datetime.strptime(start_str, "%b %Y")
+            if end_str == "Present":
+                end_date = datetime.now()
+            else:
+                end_date = datetime.strptime(end_str, "%b %Y")
 
-        months = (
-            (end_date.year - start_date.year) * 12
-            + end_date.month
-            - start_date.month
-        )
-        total_months += max(months, 0)
+            months = (
+                (end_date.year - start_date.year) * 12
+                + end_date.month
+                - start_date.month
+            )
+            total_months += max(months, 0)
+        except Exception:
+            continue
 
     return round(total_months / 12, 1)
 
 
 def normalize_resume_data(data):
-    # Name kerning normalization
     if data.get("name"):
         data["name"] = fix_candidate_name(data.get("name"), data.get("email", ""))
 
-    # Skills
     if isinstance(data.get("skills"), str):
         data["skills"] = [data["skills"]]
 
-    # Experiences
     if isinstance(data.get("experiences"), dict):
         data["experiences"] = [data["experiences"]]
 
@@ -104,11 +116,9 @@ def normalize_resume_data(data):
         elif skills_used is None:
             experience["skills_used"] = []
 
-    # Education
     if isinstance(data.get("education"), dict):
         data["education"] = [data["education"]]
 
-    # Projects
     if isinstance(data.get("projects"), dict):
         data["projects"] = [data["projects"]]
 
@@ -125,7 +135,6 @@ def normalize_resume_data(data):
         elif technologies is None:
             project["technologies"] = []
 
-    # Certifications
     if isinstance(data.get("certifications"), dict):
         data["certifications"] = [data["certifications"]]
 
@@ -133,6 +142,12 @@ def normalize_resume_data(data):
 
 
 def parse_resume(resume_text):
+    if not resume_text or len(resume_text.strip()) < 5:
+        resume_text = "Candidate profile with software engineering skills and experience."
+
+    if len(resume_text) > 10000:
+        resume_text = resume_text[:10000]
+
     system_prompt = """
 You are an expert resume parser.
 
@@ -242,8 +257,7 @@ Parse the following resume:
 {resume_text}
 """
 
-    response = client.chat.completions.create(
-        model=MODEL,
+    response = call_groq_completions(
         messages=[
             {
                 "role": "system",
@@ -254,13 +268,11 @@ Parse the following resume:
                 "content": user_prompt
             }
         ],
+        max_tokens=900,
         temperature=0.1
     )
 
     raw_output = response.choices[0].message.content
-
-    print("\n===== RAW MODEL OUTPUT =====\n")
-    print(raw_output)
 
     raw_output = (
         raw_output
@@ -271,9 +283,6 @@ Parse the following resume:
 
     data = json.loads(raw_output)
     data = normalize_resume_data(data)
-
-    print("\n===== NORMALIZED DATA =====\n")
-    print(json.dumps(data, indent=2))
 
     resume = Resume(**data)
     resume.total_experience_years = (

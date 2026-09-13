@@ -1,23 +1,28 @@
 package com.ritik.resumeservice.service.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ritik.resumeservice.dto.response.ResumeResponse;
 import com.ritik.resumeservice.entity.Resume;
 import com.ritik.resumeservice.mapper.ResumeMapper;
 import com.ritik.resumeservice.repository.ResumeRepository;
 import com.ritik.resumeservice.service.ResumeService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.http.HttpEntity;
-import org.springframework.core.io.ByteArrayResource;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,15 +37,16 @@ public class ResumeServiceImpl implements ResumeService {
 
     private final ResumeRepository resumeRepository;
 
+    @Value("${ai.service.url:https://hirenova-ai-service.onrender.com}")
+    private String aiServiceUrl;
+
     @Override
     public ResumeResponse uploadResume(
             Long userId,
             MultipartFile file) {
 
         try {
-
             String uploadDir = "uploads/";
-
             Path uploadPath = Paths.get(uploadDir);
 
             if (!Files.exists(uploadPath)) {
@@ -48,8 +54,7 @@ public class ResumeServiceImpl implements ResumeService {
             }
 
             String fileName = file.getOriginalFilename();
-
-            Path filePath = uploadPath.resolve(fileName);
+            Path filePath = uploadPath.resolve(fileName != null ? fileName : "resume.pdf");
 
             Files.copy(
                     file.getInputStream(),
@@ -62,23 +67,14 @@ public class ResumeServiceImpl implements ResumeService {
                     .orElse(null);
 
             if (resume == null) {
-
-                System.out.println("CREATING NEW RESUME");
-
                 resume = new Resume();
                 resume.setUploadedAt(LocalDateTime.now());
-
-            } else {
-
-                System.out.println(
-                        "UPDATING RESUME ID = "
-                                + resume.getId()
-                );
             }
 
             resume.setUserId(userId);
             resume.setFileName(fileName);
             resume.setFilePath(filePath.toString());
+            resume.setFileData(file.getBytes());
             resume.setUpdatedAt(LocalDateTime.now());
             
             try {
@@ -95,16 +91,27 @@ public class ResumeServiceImpl implements ResumeService {
                 });
 
                 HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-                ResponseEntity<String> response = restTemplate.postForEntity("http://127.0.0.1:8000/parse-resume", requestEntity, String.class);
+                ResponseEntity<String> response = restTemplate.postForEntity(aiServiceUrl + "/parse-resume", requestEntity, String.class);
                 
-                resume.setAiSummary(response.getBody());
-                System.out.println("AI Parsing completed successfully.");
+                if (response.getBody() != null) {
+                    resume.setAiSummary(response.getBody());
+                    try {
+                        ObjectMapper mapper = new ObjectMapper();
+                        JsonNode root = mapper.readTree(response.getBody());
+                        if (root.has("extracted_text")) {
+                            resume.setExtractedText(root.get("extracted_text").asText());
+                        } else {
+                            resume.setExtractedText(response.getBody());
+                        }
+                    } catch (Exception parseEx) {
+                        resume.setExtractedText(response.getBody());
+                    }
+                }
             } catch (Exception ex) {
                 System.out.println("Failed to call AI service: " + ex.getMessage());
             }
 
-            Resume savedResume =
-                    resumeRepository.save(resume);
+            Resume savedResume = resumeRepository.save(resume);
 
             return ResumeResponse.builder()
                     .id(savedResume.getId())
@@ -117,60 +124,56 @@ public class ResumeServiceImpl implements ResumeService {
                     .build();
 
         } catch (IOException e) {
-
-            throw new RuntimeException(
-                    "Failed to upload resume",
-                    e
-            );
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to upload resume: " + e.getMessage());
         }
     }
 
     @Override
-    public ResumeResponse getResumeByUserId(
-            Long userId) {
-
+    public ResumeResponse getResumeByUserId(Long userId) {
         Resume resume = resumeRepository
                 .findByUserId(userId)
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "Resume not found"));
+                .orElse(null);
+
+        if (resume == null) {
+            return null;
+        }
 
         return ResumeMapper.toResponse(resume);
     }
 
-
-
     @Override
-    public ResponseEntity<Resource> downloadResume(
-            Long userId) {
-
+    public ResponseEntity<Resource> downloadResume(Long userId) {
         try {
-
             Resume resume = resumeRepository
                     .findByUserId(userId)
-                    .orElseThrow(() ->
-                            new RuntimeException("Resume not found"));
+                    .orElse(null);
 
-            Path path = Paths.get(resume.getFilePath());
+            if (resume == null) {
+                return ResponseEntity.notFound().build();
+            }
 
-            Resource resource =
-                    new UrlResource(path.toUri());
+            Resource resource;
+            if (resume.getFileData() != null && resume.getFileData().length > 0) {
+                resource = new ByteArrayResource(resume.getFileData());
+            } else if (resume.getFilePath() != null && Files.exists(Paths.get(resume.getFilePath()))) {
+                Path path = Paths.get(resume.getFilePath());
+                resource = new UrlResource(path.toUri());
+            } else {
+                return ResponseEntity.notFound().build();
+            }
 
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_PDF)
                     .header(
                             HttpHeaders.CONTENT_DISPOSITION,
                             "attachment; filename=\"" +
-                                    resume.getFileName() +
+                                    (resume.getFileName() != null ? resume.getFileName() : "resume.pdf") +
                                     "\""
                     )
                     .body(resource);
 
         } catch (Exception e) {
-
-            throw new RuntimeException(
-                    "Failed to download resume",
-                    e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }

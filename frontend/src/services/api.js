@@ -1,10 +1,11 @@
 import axios from 'axios';
 
-const GATEWAY_URL = import.meta.env.VITE_GATEWAY_URL || 'http://localhost:9090';
-const AI_SERVICE_URL = import.meta.env.VITE_AI_URL || 'http://localhost:8000';
+const GATEWAY_URL = import.meta.env.VITE_GATEWAY_URL || 'https://hirenova-gateway.onrender.com';
+const AI_SERVICE_URL = import.meta.env.VITE_AI_URL || 'https://hirenova-ai-service.onrender.com';
 
 export const apiClient = axios.create({
   baseURL: GATEWAY_URL,
+  timeout: 75000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -34,8 +35,51 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Automatic retry for Render free-tier cold starts (502, 503, 504, or Network Drops)
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error.config;
+    if (!config) return Promise.reject(error);
+
+    config.__retryCount = config.__retryCount || 0;
+    const isColdStart = error.response && [502, 503, 504].includes(error.response.status);
+    const isNetworkDrop = !error.response && (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error'));
+
+    if ((isColdStart || isNetworkDrop) && config.__retryCount < 3) {
+      config.__retryCount += 1;
+      const backoff = Math.min(2500 * config.__retryCount, 7500);
+      await new Promise((resolve) => setTimeout(resolve, backoff));
+      return apiClient(config);
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 export const aiClient = axios.create({
   baseURL: AI_SERVICE_URL,
+  timeout: 75000,
 });
+
+aiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error.config;
+    if (!config) return Promise.reject(error);
+
+    config.__retryCount = config.__retryCount || 0;
+    const isColdStart = error.response && [502, 503, 504].includes(error.response.status);
+
+    if (isColdStart && config.__retryCount < 3) {
+      config.__retryCount += 1;
+      const backoff = Math.min(2500 * config.__retryCount, 7500);
+      await new Promise((resolve) => setTimeout(resolve, backoff));
+      return aiClient(config);
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export { GATEWAY_URL, AI_SERVICE_URL };

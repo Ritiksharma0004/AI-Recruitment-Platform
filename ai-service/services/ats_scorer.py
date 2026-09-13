@@ -1,6 +1,6 @@
 import json
 
-from services.groq_client import client, MODEL
+from services.groq_client import client, MODEL, call_groq_completions
 from models.match_result import MatchResult
 
 
@@ -45,20 +45,18 @@ Rules:
 - json only
 """
 
-    response = client.chat.completions.create(
-        model=MODEL,
+    response = call_groq_completions(
         messages=[
             {
                 "role": "user",
                 "content": prompt
             }
         ],
+        max_tokens=600,
         temperature=0.1
     )
 
     raw_output = response.choices[0].message.content
-
-    print(raw_output)
 
     raw_output = (
         raw_output

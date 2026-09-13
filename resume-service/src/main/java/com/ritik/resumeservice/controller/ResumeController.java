@@ -4,11 +4,9 @@ import com.ritik.resumeservice.dto.response.ResumeResponse;
 import com.ritik.resumeservice.service.ResumeService;
 import org.springframework.core.io.Resource;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.http.MediaType;
 
 @RestController
 @RequestMapping("/resume")
@@ -34,9 +32,11 @@ public class ResumeController {
     public ResponseEntity<ResumeResponse> getMyResume(
             @RequestHeader("X-User-Id") Long userId) {
 
-        return ResponseEntity.ok(
-                resumeService.getResumeByUserId(userId)
-        );
+        ResumeResponse resume = resumeService.getResumeByUserId(userId);
+        if (resume == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(resume);
     }
 
     @GetMapping("/download")
@@ -50,9 +50,11 @@ public class ResumeController {
     public ResponseEntity<ResumeResponse> getCandidateResume(
             @PathVariable Long candidateId) {
 
-        return ResponseEntity.ok(
-                resumeService.getResumeByUserId(candidateId)
-        );
+        ResumeResponse resume = resumeService.getResumeByUserId(candidateId);
+        if (resume == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(resume);
     }
 
     @GetMapping("/download/{candidateId}")

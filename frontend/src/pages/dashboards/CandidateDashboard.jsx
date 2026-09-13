@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Bot, LogOut, Briefcase, FileText, User as UserIcon, Calendar, Search, Loader, Upload, CheckCircle, Activity, Menu, Download, Lock, X, ChevronRight, Mail, Phone, Clock, Sparkles, Zap, ArrowUpRight, ShieldCheck, AlertCircle, RefreshCw, Layers , MapPin, Rocket, Check, Video, Code, ExternalLink, MessageSquare, Send, Star, Gift, Award, ThumbsUp, CheckCircle2, Copy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { jobService } from '../../services/jobService';
-import { apiClient } from '../../services/api';
+import { apiClient, AI_SERVICE_URL } from '../../services/api';
 import { authService } from '../../services/authService';
 import axios from 'axios';
 
@@ -242,8 +242,9 @@ const CandidateDashboard = ({ user }) => {
           {activeTab === 'resume' && (
             <ResumeTab 
               globalResume={globalResume} 
-              onResumeUpdated={() => apiClient.get('/resume/me').then(res => setGlobalResume(res.data))} 
+              onResumeUpdated={() => apiClient.get('/resume/me').then(res => setGlobalResume(res.data || null)).catch(() => setGlobalResume(null))} 
               displayUsername={displayUsername} 
+              email={email}
             />
           )}
           {activeTab === 'ats-checker' && <ATSCheckerTab globalResume={globalResume} />}
@@ -257,7 +258,7 @@ const CandidateDashboard = ({ user }) => {
 
 
 
-const ResumeTab = ({ globalResume, onResumeUpdated, displayUsername }) => {
+const ResumeTab = ({ globalResume, onResumeUpdated, displayUsername, email }) => {
   const fileInputRef = useRef(null);
   const [resumeUploading, setResumeUploading] = useState(false);
   const [uploadPhase, setUploadPhase] = useState('');
@@ -265,7 +266,8 @@ const ResumeTab = ({ globalResume, onResumeUpdated, displayUsername }) => {
   const parsedAI = useMemo(() => {
     if (globalResume && globalResume.aiSummary) {
       try {
-        return JSON.parse(globalResume.aiSummary);
+        const parsed = JSON.parse(globalResume.aiSummary);
+        return parsed.parsed ? parsed.parsed : parsed;
       } catch (e) {
         return null;
       }
@@ -273,7 +275,7 @@ const ResumeTab = ({ globalResume, onResumeUpdated, displayUsername }) => {
     return null;
   }, [globalResume]);
 
-  const candidateName = formatName(parsedAI?.name, displayUsername, parsedAI?.email || email);
+  const candidateName = formatName(parsedAI?.name, displayUsername);
 
   const handleResumeUpload = async (e) => {
     if (!e.target.files[0]) return;
@@ -315,6 +317,16 @@ const ResumeTab = ({ globalResume, onResumeUpdated, displayUsername }) => {
         </div>
         
         <div className="flex items-center gap-3">
+          {globalResume && (
+            <button
+              onClick={() => jobService.downloadMyResume(globalResume.fileName || 'resume.pdf')}
+              className="px-4 py-2 bg-[#121524] hover:bg-[#1a1f33] text-slate-300 border border-white/[0.08] rounded-xl font-normal text-xs transition-all flex items-center justify-center gap-1.5 hover:text-white shadow-sm"
+              title="Download your active resume PDF"
+            >
+              <Download className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Download PDF</span>
+            </button>
+          )}
           <button 
             onClick={() => fileInputRef.current?.click()} 
             disabled={resumeUploading}
@@ -336,18 +348,49 @@ const ResumeTab = ({ globalResume, onResumeUpdated, displayUsername }) => {
       )}
 
       {!parsedAI ? (
-        <div className="ai-card rounded-3xl p-16 border border-dashed border-white/[0.08] text-center mt-6">
-          <Bot className="w-12 h-12 mx-auto mb-3 text-slate-600" />
-          <h4 className="text-lg font-normal text-white mb-1">No AI Profile Available</h4>
-          <p className="text-xs text-slate-400 font-light max-w-sm mx-auto mb-5">
-            Upload your resume PDF to activate automatic ATS scoring, skill extraction, and recruiter matching.
-          </p>
-          <button 
-            onClick={() => fileInputRef.current?.click()} 
-            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-normal transition-all"
-          >
-            Select PDF Document
-          </button>
+        <div className="ai-card rounded-3xl p-10 sm:p-14 border border-white/[0.08] text-center mt-6 relative overflow-hidden">
+          {globalResume?.fileName ? (
+            <div className="max-w-md mx-auto space-y-4">
+              <div className="w-14 h-14 mx-auto rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                <FileText className="w-7 h-7" />
+              </div>
+              <div>
+                <h4 className="text-lg font-normal text-white mb-1">Resume File Registered</h4>
+                <p className="text-xs font-mono text-indigo-300 break-all">{globalResume.fileName}</p>
+                <p className="text-xs text-slate-400 font-light mt-2">
+                  Your PDF file is secured in the repository. You can download the active file or re-upload to trigger immediate neural extraction.
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <button
+                  onClick={() => jobService.downloadMyResume(globalResume.fileName)}
+                  className="px-4 py-2 bg-[#121524] hover:bg-[#1a1f33] text-slate-200 border border-white/[0.08] rounded-xl text-xs font-normal transition-all flex items-center gap-2"
+                >
+                  <Download className="w-3.5 h-3.5 text-indigo-400" /> Download PDF
+                </button>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-normal transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(99,102,241,0.3)]"
+                >
+                  <Upload className="w-3.5 h-3.5" /> Re-Upload & Parse
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <Bot className="w-12 h-12 mx-auto mb-3 text-slate-600" />
+              <h4 className="text-lg font-normal text-white mb-1">No AI Profile Available</h4>
+              <p className="text-xs text-slate-400 font-light max-w-sm mx-auto mb-5">
+                Upload your resume PDF to activate automatic ATS scoring, skill extraction, and recruiter matching.
+              </p>
+              <button 
+                onClick={() => fileInputRef.current?.click()} 
+                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-normal transition-all shadow-[0_0_20px_rgba(99,102,241,0.25)]"
+              >
+                Select PDF Document
+              </button>
+            </>
+          )}
         </div>
       ) : (
         <div className="ai-card rounded-3xl p-8 sm:p-12 border border-white/[0.08] shadow-2xl relative overflow-hidden">
@@ -360,9 +403,9 @@ const ResumeTab = ({ globalResume, onResumeUpdated, displayUsername }) => {
               {candidateName}
             </h1>
             <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 mt-3 text-xs font-light text-slate-400">
-              {parsedAI.email && (
+              {(parsedAI.email || email) && (
                 <div className="flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-indigo-400"/> {parsedAI.email}
+                  <Mail className="w-3.5 h-3.5 text-indigo-400"/> {parsedAI.email || email}
                 </div>
               )}
               {parsedAI.phone && (
@@ -514,13 +557,14 @@ const ApplyModal = ({ job, globalResume, onClose }) => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('job_description', job.description);
-        res = await axios.post((import.meta.env.VITE_AI_URL || 'http://localhost:8000') + '/ats-score-upload', formData, {
+        res = await axios.post(AI_SERVICE_URL + '/ats-score-upload', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
       } else {
-        res = await axios.post((import.meta.env.VITE_AI_URL || 'http://localhost:8000') + '/ats-score', {
+        const textToScan = globalResume?.extractedText || (globalResume?.aiSummary ? (typeof globalResume.aiSummary === 'string' ? globalResume.aiSummary : JSON.stringify(globalResume.aiSummary)) : '') || 'Candidate Resume Profile';
+        res = await axios.post(AI_SERVICE_URL + '/ats-score', {
           job_description: job.description,
-          resume_text: globalResume.extractedText
+          resume_text: textToScan
         });
       }
       setScannedResult(res.data);
@@ -685,11 +729,12 @@ const ApplyModal = ({ job, globalResume, onClose }) => {
                   </div>
                 </div>
 
-                {scannedResult.missing_skills?.length > 0 && (
+                {((scannedResult.missing_skills && scannedResult.missing_skills.length > 0) ||
+                  (scannedResult.details?.missing_skills && scannedResult.details.missing_skills.length > 0)) && (
                   <div className="p-3 bg-[#0d101a] rounded-xl border border-white/[0.05]">
                     <span className="text-[10px] font-mono text-amber-400 uppercase tracking-wider block mb-1.5">Missing Target Skills</span>
                     <div className="flex flex-wrap gap-1">
-                      {scannedResult.missing_skills.map(s => (
+                      {(scannedResult.missing_skills || scannedResult.details?.missing_skills || []).map(s => (
                         <span key={s} className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 text-[10px] font-mono">
                           {s}
                         </span>
@@ -1241,12 +1286,12 @@ const ATSCheckerTab = ({ globalResume }) => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('job_description', jobDesc);
-        res = await axios.post((import.meta.env.VITE_AI_URL || 'http://localhost:8000') + '/ats-score-upload', formData, {
+        res = await axios.post(AI_SERVICE_URL + '/ats-score-upload', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
       } else {
         if (!globalResume || !globalResume.extractedText) return alert("Upload a resume or provide a document to scan.");
-        res = await axios.post((import.meta.env.VITE_AI_URL || 'http://localhost:8000') + '/ats-score', {
+        res = await axios.post(AI_SERVICE_URL + '/ats-score', {
           job_description: jobDesc,
           resume_text: globalResume.extractedText
         });
@@ -1326,12 +1371,12 @@ const ATSCheckerTab = ({ globalResume }) => {
                 Missing Target Competencies
               </h5>
               <div className="flex flex-wrap gap-1.5">
-                {result.missing_skills?.map(skill => (
+                {(result.missing_skills || result.details?.missing_skills || []).map(skill => (
                   <span key={skill} className="px-2.5 py-1 rounded bg-rose-500/10 text-rose-400 text-xs font-mono border border-rose-500/20">
                     {skill}
                   </span>
                 ))}
-                {(!result.missing_skills || result.missing_skills.length === 0) && (
+                {((!result.missing_skills || result.missing_skills.length === 0) && (!result.details?.missing_skills || result.details.missing_skills.length === 0)) && (
                   <span className="text-xs font-mono text-emerald-400">Optimal coverage. No critical omissions detected.</span>
                 )}
               </div>

@@ -22,6 +22,7 @@ const Login = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [isForgotLoading, setIsForgotLoading] = useState(false);
   const [forgotMsg, setForgotMsg] = useState(null);
+  const [wakeWarning, setWakeWarning] = useState(false);
   
   const navigate = useNavigate();
 
@@ -35,7 +36,9 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setWakeWarning(false);
     setPopup({ show: false, type: '', message: '' });
+    const timer = setTimeout(() => setWakeWarning(true), 4000);
 
     try {
       const response = await authService.login(formData);
@@ -49,6 +52,8 @@ const Login = () => {
 
       setPopup({ show: true, type: 'success', message: 'Identity verified. Access granted.' });
       
+      clearTimeout(timer);
+      setWakeWarning(false);
       setTimeout(() => {
         navigate('/dashboard'); 
       }, 1200);
@@ -59,6 +64,8 @@ const Login = () => {
         type: 'error', 
         message: err.response?.data?.message || err.message || 'Invalid credentials or connection timeout.' 
       });
+      clearTimeout(timer);
+      setWakeWarning(false);
       setIsLoading(false);
     }
   };
@@ -263,6 +270,11 @@ const Login = () => {
                 </>
               )}
             </button>
+            {wakeWarning && (
+              <p className="mt-2 text-[11px] font-mono text-amber-400/90 text-center animate-pulse">
+                Waking up cloud instances (Render free tier takes ~30s if idle)...
+              </p>
+            )}
           </form>
 
           <div className="mt-8 pt-6 border-t border-white/[0.06] text-center">
