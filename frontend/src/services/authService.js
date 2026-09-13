@@ -6,6 +6,11 @@ export const authService = {
     return response.data;
   },
 
+  sendRegistrationOtp: async (email) => {
+    const response = await apiClient.post('/auth/send-registration-otp', { email });
+    return response.data;
+  },
+
   register: async (userData) => {
     const response = await apiClient.post('/auth/register', userData);
     return response.data;

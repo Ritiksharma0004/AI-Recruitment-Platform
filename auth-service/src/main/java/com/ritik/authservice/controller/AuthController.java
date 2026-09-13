@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.Map;
 
 @RestController
@@ -18,6 +19,12 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthenticationService authenticationService;
+
+    @PostMapping("/send-registration-otp")
+    public ResponseEntity<Map<String, String>> sendRegistrationOtp(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        return ResponseEntity.ok(authenticationService.sendRegistrationOtp(email));
+    }
 
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody RegisterRequest request) {

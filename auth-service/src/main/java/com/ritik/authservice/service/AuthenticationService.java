@@ -15,6 +15,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,17 +40,64 @@ public class AuthenticationService {
         }
     }
     private final Map<String, ResetEntry> resetTokens = new ConcurrentHashMap<>();
+    private final Map<String, ResetEntry> registrationOtps = new ConcurrentHashMap<>();
+
+    public Map<String, String> sendRegistrationOtp(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            throw new RuntimeException("Valid email address is required");
+        }
+        String normalizedEmail = email.toLowerCase().trim();
+        if (userRepository.existsByEmail(normalizedEmail)) {
+            throw new RuntimeException("An account with this email already exists.");
+        }
+
+        String otp = String.format("%06d", new SecureRandom().nextInt(1000000));
+        registrationOtps.put(normalizedEmail, new ResetEntry(otp, LocalDateTime.now().plusMinutes(10)));
+
+        emailService.sendRegistrationOtpEmail(normalizedEmail, otp);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "A 6-digit verification code has been dispatched to " + normalizedEmail);
+        response.put("email", normalizedEmail);
+        return response;
+    }
 
     public String register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            throw new RuntimeException("Email is required");
+        }
+        String normalizedEmail = request.getEmail().toLowerCase().trim();
+
+        if (userRepository.existsByEmail(normalizedEmail)) {
             throw new RuntimeException("Email already exists");
         }
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new RuntimeException("Username already exists");
         }
+
+        // Candidate ONLY OTP verification
+        if (request.getOtp() == null || request.getOtp().trim().isEmpty()) {
+            throw new RuntimeException("6-digit email verification code (OTP) is required");
+        }
+
+        ResetEntry entry = registrationOtps.get(normalizedEmail);
+        if (entry == null) {
+            throw new RuntimeException("No active verification code found for this email. Please request an OTP.");
+        }
+        if (LocalDateTime.now().isAfter(entry.expiry)) {
+            registrationOtps.remove(normalizedEmail);
+            throw new RuntimeException("Verification code has expired. Please request a new OTP.");
+        }
+        if (!entry.code.equals(request.getOtp().trim())) {
+            throw new RuntimeException("Invalid verification code (OTP). Please check and try again.");
+        }
+
+        registrationOtps.remove(normalizedEmail);
+        request.setEmail(normalizedEmail);
+
         User user = UserMapper.toEntity(request, passwordEncoder.encode(request.getPassword()));
         userRepository.save(user);
-        return "User Registered Successfully";
+        return "Candidate Registered Successfully";
     }
 
     public String registerRecruiter(RegisterRequest request) {

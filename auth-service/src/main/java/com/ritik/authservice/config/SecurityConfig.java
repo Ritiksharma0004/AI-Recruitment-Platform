@@ -34,6 +34,7 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/auth/register",
                     "/auth/register/**",
+                    "/auth/send-registration-otp",
                     "/auth/login",
                     "/auth/forgot-password",
                     "/auth/reset-password",
