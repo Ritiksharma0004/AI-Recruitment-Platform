@@ -33,7 +33,6 @@ public class AuthenticationService {
     private final JwtService jwtService;
     private final EmailService emailService;
 
-    // Secure in-memory token/OTP entry storing salted BCrypt hash of the code
     private static class SecureCodeEntry {
         final String hashedCode;
         final LocalDateTime expiry;
@@ -55,10 +54,8 @@ public class AuthenticationService {
             throw new RuntimeException("An account with this email already exists. Please log in instead.");
         }
 
-        // Generate cryptographically secure 6-digit OTP
         String rawOtp = String.format("%06d", new SecureRandom().nextInt(1000000));
         
-        // Store only BCrypt hashed OTP in server memory for 10 minutes
         registrationOtps.put(normalizedEmail, new SecureCodeEntry(passwordEncoder.encode(rawOtp), LocalDateTime.now().plusMinutes(10)));
 
         boolean emailSent = emailService.sendRegistrationOtpEmail(normalizedEmail, rawOtp);
@@ -70,7 +67,7 @@ public class AuthenticationService {
         if (!emailSent) {
             log.warn("Failed to send registration OTP email to {} - likely due to Resend limit. Falling back to dev bypass.", normalizedEmail);
             response.put("message", "Email service unavailable. DEV BYPASS: Your OTP code is " + rawOtp);
-            response.put("devOtpCode", rawOtp); // Used by frontend in development if needed
+            response.put("devOtpCode", rawOtp); 
         } else {
             response.put("message", "A 6-digit verification code has been dispatched to " + normalizedEmail);
         }
@@ -91,7 +88,6 @@ public class AuthenticationService {
             throw new RuntimeException("Username already exists");
         }
 
-        // Candidate ONLY OTP verification
         if (request.getOtp() == null || request.getOtp().trim().isEmpty()) {
             throw new RuntimeException("6-digit email verification code (OTP) is required");
         }
@@ -108,11 +104,9 @@ public class AuthenticationService {
             throw new RuntimeException("Invalid verification code. Please check and try again.");
         }
 
-        // Remove OTP cleanly after successful use
         registrationOtps.remove(normalizedEmail);
 
-        User user = UserMapper.toEntity(request);
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        User user = UserMapper.toEntity(request, passwordEncoder.encode(request.getPassword()));
         user.setRole(Role.CANDIDATE);
         userRepository.save(user);
         return "Candidate Registration successful!";
@@ -126,8 +120,7 @@ public class AuthenticationService {
             throw new RuntimeException("Username already exists");
         }
 
-        User user = UserMapper.toEntity(request);
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        User user = UserMapper.toEntity(request, passwordEncoder.encode(request.getPassword()));
         user.setRole(Role.RECRUITER);
         userRepository.save(user);
         return "Recruiter Registration successful!";
@@ -141,8 +134,7 @@ public class AuthenticationService {
             throw new RuntimeException("Username already exists");
         }
 
-        User user = UserMapper.toEntity(request);
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        User user = UserMapper.toEntity(request, passwordEncoder.encode(request.getPassword()));
         user.setRole(Role.ADMIN);
         userRepository.save(user);
         return "Admin Registration successful!";
@@ -169,7 +161,7 @@ public class AuthenticationService {
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
 
-        String token = jwtService.generateToken(user);
+        String token = jwtService.generateToken(user.getId(), user.getEmail(), user.getUsername(), user.getRole().name());
         return UserMapper.toAuthResponse(user, token);
     }
     
@@ -217,7 +209,7 @@ public class AuthenticationService {
         if (!emailSent) {
             log.warn("Failed to send password reset email to {} - falling back to DEV BYPASS", normalizedEmail);
             res.put("message", "Email service unavailable. DEV BYPASS: Your reset code is " + rawCode);
-            res.put("devResetCode", rawCode); // Exposes it so frontend can autofill or show it
+            res.put("devResetCode", rawCode); 
         } else {
             res.put("message", "A 6-digit security reset key has been sent to " + normalizedEmail + ".");
         }
@@ -256,7 +248,6 @@ public class AuthenticationService {
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
 
-        // Security: Delete the reset token immediately after successful reset
         resetTokens.remove(normalizedEmail);
 
         Map<String, String> response = new HashMap<>();
