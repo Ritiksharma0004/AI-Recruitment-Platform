@@ -2,302 +2,234 @@
 
 @layer base {
   :root {
-    --stripe-blue: #635bff;
-    --stripe-blue-hover: #5851df;
-    --stripe-dark: #0a2540;
-    --stripe-text: #425466;
-    --stripe-bg: #f7f9fc;
-    --stripe-gray: #e6ebf1;
-    --stripe-border: #e3e8ee;
-    --stripe-surface: #ffffff;
+    /* Vercel/Linear Dark Theme Variables */
+    --bg-main: #000000;
+    --bg-surface: #0a0a0a;
+    --bg-surface-hover: #111111;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-focus: rgba(255, 255, 255, 0.2);
+    
+    --text-primary: #ffffff;
+    --text-secondary: #a1a1aa; /* clean neutral gray */
+    
+    /* Vercel-style glowing accents */
+    --accent-blue: #0070f3;
+    --accent-cyan: #50e3c2;
+    --accent-purple: #7928ca;
   }
 
   body {
-    background-color: var(--stripe-bg) !important;
-    color: var(--stripe-dark) !important;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
-    letter-spacing: -0.0125em;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.012em;
+    min-height: 100vh;
   }
 }
 
-/* Fix main containers */
-.min-h-screen, body {
-  background-color: var(--stripe-bg) !important;
-  color: var(--stripe-dark) !important;
-  background-image: none !important; 
+/* FIX: "My current text is so thin not visible at first glance" */
+/* We physically eliminate wafer-thin fonts globally */
+.font-extralight, 
+.font-thin, 
+.font-light {
+  font-weight: 450 !important; /* Forces all faint fonts to readable medium thickness */
+}
+.font-normal {
+  font-weight: 500 !important;
 }
 
-/* Force pointer cursor on all interactive controls */
-button, 
-a, 
-[role="button"], 
-input[type="submit"], 
-input[type="button"], 
-input[type="file"],
-select,
-summary {
-  cursor: pointer !important;
+/* Base structural backgrounds */
+.min-h-screen[class*="bg-"] {
+  background-color: var(--bg-main) !important;
 }
 
-/* Typography Remapping */
+/* Overwrite dark slate text coloring to high-contrast white */
+.text-slate-400, .text-slate-500, p {
+  color: var(--text-secondary) !important;
+}
+.text-slate-300, .text-slate-200, .text-white {
+  color: var(--text-primary) !important;
+}
 h1, h2, h3, h4, h5, h6 {
-  color: var(--stripe-dark) !important;
-  font-weight: 700 !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
   letter-spacing: -0.025em !important;
 }
 
-.text-white, .text-slate-900, .text-slate-800, .text-slate-200, .text-slate-300 {
-  color: var(--stripe-dark) !important;
+/* Custom Grids (Minimal Dark) */
+.bg-ai-grid {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
 }
 
-.text-slate-400, .text-slate-500, .text-slate-600, p {
-  color: var(--stripe-text) !important;
+.bg-ai-dots {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
-/* Overriding font weights globally */
-.font-light, .font-extralight, .font-thin, .font-normal {
-  font-weight: 400 !important;
-}
-.font-medium { font-weight: 500 !important; }
-.font-semibold, .font-bold {
-  font-weight: 600 !important;
-}
-
-/* Gradient text */
-.bg-clip-text {
-  background: linear-gradient(135deg, #635bff 0%, #00d4ff 100%) !important;
-  -webkit-background-clip: text !important;
-  -webkit-text-fill-color: transparent !important;
-  background-clip: text !important;
-}
-
-/* Stripe Cards */
-.bg-white, .ai-card, .ai-card-glow, [class*="bg-slate-50"], .rounded-2xl, .rounded-3xl, .rounded-xl {
-  background-color: var(--stripe-surface) !important;
-  border: 1px solid var(--stripe-border) !important;
-  box-shadow: 0 2px 7px rgba(0,0,0,0.04), 0 5px 15px rgba(0,0,0,0.02) !important;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+/* Premium Dark Mode Cards */
+.ai-card, .ai-card-glow, [class*="bg-[#090c14]"], [class*="bg-[#0b0f19]"] {
+  background-color: var(--bg-surface) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important; /* Flat UI aesthetic */
+  transition: all 0.2s ease !important;
 }
 
 .ai-card:hover, .ai-card-glow:hover {
-  box-shadow: 0 4px 10px rgba(0,0,0,0.06), 0 10px 30px rgba(0,0,0,0.03) !important;
-  transform: translateY(-2px) !important;
+  background-color: var(--bg-surface-hover) !important;
+  border-color: var(--border-focus) !important;
+  box-shadow: 0 0 30px rgba(255,255,255,0.02) !important;
 }
 
-/* Remove border/shadow from pills disguised as rounded-xl */
-[class*="rounded-full"] {
-  border-radius: 9999px !important;
+/* Modals */
+.fixed.bg-black\/80 {
+  background-color: rgba(0,0,0,0.85) !important;
+  backdrop-filter: blur(8px) !important;
 }
 
-/* Buttons */
-button, a[class*="px-"] {
-  border-radius: 8px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0 !important;
-  text-decoration: none !important;
-}
-
-/* Primary actions */
-button[class*="bg-slate-900"],
-button[class*="bg-indigo"],
-button[class*="bg-emerald"],
-button[class*="bg-purple"],
-a[class*="bg-slate-900"],
-a[class*="bg-indigo"],
-a[class*="bg-emerald"],
-a[class*="bg-purple"] {
-  background: var(--stripe-blue) !important;
-  color: white !important;
-  border: none !important;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.15) !important;
-}
-
-button[class*="bg-slate-900"]:hover,
-button[class*="bg-indigo"]:hover,
-button[class*="bg-emerald"]:hover,
-button[class*="bg-purple"]:hover,
-a[class*="bg-slate-900"]:hover,
-a[class*="bg-indigo"]:hover,
-a[class*="bg-emerald"]:hover,
-a[class*="bg-purple"]:hover {
-  background: var(--stripe-blue-hover) !important;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15) !important;
-  transform: translateY(-1px) !important;
-  color: white !important;
-}
-
-button[class*="bg-slate-900"] *,
-button[class*="bg-indigo"] *,
-button[class*="bg-emerald"] *,
-a[class*="bg-slate-900"] *,
-a[class*="bg-indigo"] *,
-a[class*="bg-emerald"] * {
-  color: white !important;
-}
-
-/* Secondary actions */
-button[class*="bg-white"],
-button[class*="bg-slate-100"],
-button[class*="bg-slate-800"],
-a[class*="bg-white"]:not([class*="group-hover"]),
-a[class*="bg-[#121524]"] {
-  background: var(--stripe-surface) !important;
-  color: var(--stripe-dark) !important;
-  border: 1px solid var(--stripe-border) !important;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
-  text-shadow: none !important;
-}
-button[class*="bg-white"]:hover,
-a[class*="bg-white"]:hover,
-button[class*="bg-slate-100"]:hover {
-  background: var(--stripe-bg) !important;
-  color: var(--stripe-blue) !important;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.06) !important;
-}
-
-/* Inputs & Forms */
+/* Inputs & Forms (Premium Vercel Style) */
 input, textarea, select {
-  background-color: #ffffff !important;
-  border: 1px solid #d3dae3 !important;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
-  color: var(--stripe-dark) !important;
+  background-color: var(--bg-main) !important;
+  border: 1px solid var(--border-subtle) !important;
+  color: var(--text-primary) !important;
   border-radius: 8px !important;
   padding: 0.75rem 1rem !important;
   transition: all 0.2s ease !important;
 }
 
 input:focus, textarea:focus, select:focus {
-  border-color: var(--stripe-blue) !important;
-  box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  background-color: var(--bg-surface) !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
   outline: none !important;
 }
 
-input::placeholder, textarea::placeholder {
-  color: #adbdcc !important;
-  font-weight: 400 !important;
+input::placeholder {
+  color: #666666 !important;
 }
 
-label {
-  color: var(--stripe-dark) !important;
-  font-weight: 600 !important;
-  font-size: 0.825rem !important;
-  margin-bottom: 0.25rem !important;
-  text-transform: none !important;
-  letter-spacing: 0 !important;
+/* Standard Buttons & Nav Links */
+button, a {
+  border-radius: 6px !important;
+  text-decoration: none !important;
+  transition: all 0.2s ease !important;
 }
 
-/* Decorative Pills / Badges */
-[class*="rounded-full"][class*="bg-"] {
-  background-color: var(--stripe-gray) !important;
-  border: 1px solid var(--stripe-border) !important;
-  color: var(--stripe-dark) !important;
-  font-weight: 600 !important;
-  border-radius: 12px !important;
-  box-shadow: none !important;
-  padding: 0.25rem 0.75rem !important;
-}
-
-/* Override icons that use text-emerald or text-indigo to match theme */
-svg[class*="text-emerald"], svg[class*="text-indigo"], svg[class*="text-purple"] {
-  color: var(--stripe-blue) !important;
-}
-
-/* Ambient Lights - subtle multi-color bleeds typical of Stripe */
-.animate-ambient {
-  background: radial-gradient(circle at 50% 0%, rgba(99, 91, 255, 0.12) 0%, rgba(0, 212, 255, 0.08) 25%, transparent 50%) !important;
-  filter: blur(80px) saturate(150%) !important;
-  opacity: 1 !important;
-  width: 100vw !important;
-  height: 50vh !important;
-}
-
-/* Navbars / Headers */
-header, nav.sticky {
-  background: rgba(255, 255, 255, 0.85) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
+/* High-Contrast Primary Buttons (Vercel Style: White Button, Black Text) */
+button[class*="bg-indigo-600"],
+button[class*="bg-indigo-500"],
+button[class*="bg-emerald"],
+button[class*="bg-purple"],
+a[class*="bg-indigo"],
+a[class*="bg-emerald"],
+a[class*="bg-purple"] {
+  background: var(--text-primary) !important;
+  color: var(--bg-main) !important;
   border: none !important;
-  border-bottom: 1px solid var(--stripe-border) !important;
-  box-shadow: none !important;
-  border-radius: 0 !important;
+  font-weight: 600 !important;
+  box-shadow: 0 0 20px rgba(255,255,255,0.1) !important;
 }
 
-nav.sticky {
-  max-width: 100% !important;
-  width: 100% !important;
-  top: 0 !important;
-  padding-left: 2rem !important;
-  padding-right: 2rem !important;
+button[class*="bg-indigo-600"]:hover,
+button[class*="bg-indigo-500"]:hover,
+a[class*="bg-indigo"]:hover {
+  background: var(--text-secondary) !important;
+  box-shadow: 0 0 30px rgba(255,255,255,0.2) !important;
+  transform: translateY(-1px);
 }
 
-/* Sidebar & Dashboard Layout */
-aside, header.bg-\[\#090c14\]\/80 {
-  background-color: var(--stripe-surface) !important;
-  border-right: 1px solid var(--stripe-border) !important;
-  box-shadow: none !important;
-  border-radius: 0 !important;
+/* Force text inside primary buttons to be dark */
+button[class*="bg-indigo"] *, a[class*="bg-indigo"] * {
+  color: var(--bg-main) !important;
 }
 
-header.bg-\[\#090c14\]\/80 {
-  border-right: none !important;
-  border-bottom: 1px solid var(--stripe-border) !important;
-}
-
-/* Sidebar active states */
-aside button, aside a {
+/* Ghost / Nav buttons */
+button.bg-white\/\[0\.03\],
+a.bg-white\/\[0\.03\] {
   background: transparent !important;
-  box-shadow: none !important;
-  color: var(--stripe-text) !important;
+  border: 1px solid var(--border-subtle) !important;
+  color: var(--text-secondary) !important;
+}
+button.bg-white\/\[0\.03\]:hover,
+a.bg-white\/\[0\.03\]:hover {
+  background: var(--bg-surface-hover) !important;
+  border-color: var(--border-focus) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Navbars / Top Headers */
+header, nav.sticky {
+  background: rgba(0, 0, 0, 0.7) !important;
+  backdrop-filter: blur(12px) !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+}
+
+/* Dashboards Sidebars */
+aside {
+  background-color: var(--bg-main) !important;
+  border-right: 1px solid var(--border-subtle) !important;
+}
+aside button, aside a {
+  color: var(--text-secondary) !important;
+  background: transparent !important;
   border: none !important;
 }
 aside button[class*="bg-"], aside a[class*="bg-"] {
-  background: var(--stripe-bg) !important;
-  color: var(--stripe-dark) !important;
+  background-color: var(--bg-surface-hover) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-subtle) !important;
 }
 aside button:hover, aside a:hover {
-  background: var(--stripe-gray) !important;
-  color: var(--stripe-dark) !important;
+  background-color: var(--bg-surface-hover) !important;
+  color: var(--text-primary) !important;
 }
 
-/* Specific elements to clean up */
-.animate-laser { display: none !important; }
-.border-white\/\[0\.07\], .border-white\/\[0\.06\], .border-white\/\[0\.1\] { border-color: var(--stripe-border) !important; }
-aside .text-white { color: var(--stripe-dark) !important; }
-aside .border-white\/\[0\.06\] { border-color: var(--stripe-border) !important; }
-
-/* Dashboard Content Background */
-mai > div {
-  background-color: var(--stripe-bg) !important;
+/* Glowing Ambient Orbs for Dark Mode */
+.fixed[class*="blur-"] {
+  opacity: 0.7 !important;
+  filter: blur(120px) saturate(200%) !important;
+  z-index: 0 !important;
+}
+/* Ensure components remain above glows */
+header, main, aside, .ai-card, form {
+  position: relative;
+  z-index: 10;
 }
 
-/* Modals */
-.fixed.inset-0.bg-black\/70,
-.fixed.inset-0.bg-slate-900\/60 {
-  background-color: rgba(10, 37, 64, 0.4) !important;
-  backdrop-filter: blur(4px) !important;
-}
-
-/* Toast Notifications */
-.fixed.bottom-6.right-6 {
-  background-color: var(--stripe-surface) !important;
-  border: 1px solid var(--stripe-border) !important;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.08) !important;
-  color: var(--stripe-dark) !important;
-}
-
-/* Custom scrollbar matching Stripe */
+/* Scrollbar (Dark Style) */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--bg-main);
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #333333;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #444444;
+}
+
+/* Ensure the Gradient Tags look good */
+.bg-indigo-500\/10 {
+  background-color: rgba(255,255,255,0.05) !important;
+  border-color: rgba(255,255,255,0.1) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Hide noisy elements like lasers */
+.animate-laser {
+  display: none !important;
+}
+
+/* Remove dark-border overrides inside cards */
+.border-white\/\[0\.07\], .border-white\/\[0\.06\], .border-white\/\[0\.09\], .border-white\/\[0\.1\] {
+  border-color: var(--border-subtle) !important;
 }
