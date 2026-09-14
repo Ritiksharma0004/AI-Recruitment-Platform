@@ -14,9 +14,13 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        
+        {/* Fix: Added missing routes for role-based dashboards that Login.jsx points to */}
         <Route path="/recruiter-dashboard" element={<Dashboard />} />
         <Route path="/admin-dashboard" element={<Dashboard />} />
         <Route path="/candidate-dashboard" element={<Dashboard />} />
+        
+        {/* Fallback route */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

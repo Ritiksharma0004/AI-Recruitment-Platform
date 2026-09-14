@@ -52,6 +52,7 @@ const Login = () => {
     try {
       const data = await authService.login(formData);
       
+      // FIX: Store the token and user data so Dashboard page can extract it.
       if (data.token) {
         localStorage.setItem('token', data.token);
       }
