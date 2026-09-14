@@ -193,8 +193,8 @@ const OverviewTab = () => {
           apiClient.get('/interviews').catch(() => ({ data: [] }))
         ]);
         setStats({ 
-          candidates: authStats.totalCandidates || 0, 
-          recruiters: authStats.totalRecruiters || 0, 
+          candidates: authStats.candidates || 0, // FIXED KEY MAPPING HERE
+          recruiters: authStats.recruiters || 0, // FIXED KEY MAPPING HERE
           jobs: allJobs.length || 0, 
           interviews: allInterviews.data?.length || 0 
         });
@@ -300,91 +300,61 @@ const CreateRecruiterTab = () => {
           <ShieldCheck className="w-5 h-5" />
         </div>
         <div>
-          <h3 className="text-lg font-light text-white tracking-tight">Provision Recruiter Credentials</h3>
-          <p className="text-xs text-slate-400 font-light mt-0.5">Grant hiring management credentials to an enterprise client.</p>
+          <h3 className="text-xl font-normal text-white">Create Recruiter Node</h3>
+          <p className="text-xs text-slate-400 mt-0.5">Provision a new verified enterprise seat.</p>
         </div>
       </div>
-
+      
       {status && (
-        <div className={`p-3 mb-5 rounded-xl border text-xs font-mono flex items-center gap-2 ${
-          status.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
-        }`}>
-          {status.msg}
+        <div className={`p-3 rounded-xl border text-xs flex gap-2 items-start mb-6 ${status.type === 'error' ? 'bg-rose-500/10 border-rose-500/20 text-rose-300' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'}`}>
+          {status.type === 'error' ? <X className="w-4 h-4 shrink-0" /> : <CheckSquare className="w-4 h-4 shrink-0" />}
+          <span className="leading-relaxed">{status.msg}</span>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block">First Name</label>
+            <label className="text-[11px] font-mono text-slate-400 block uppercase tracking-wider">First Name</label>
             <input 
-              type="text" 
-              required 
-              value={formData.firstName} 
-              onChange={e => setFormData({...formData, firstName: e.target.value})} 
-              className="w-full px-3.5 py-2.5 bg-[#090b14] border border-white/[0.07] rounded-xl text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-emerald-500/50" 
+              required type="text" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})}
+              className="w-full bg-[#090c14] border border-white/[0.07] rounded-xl text-sm px-3.5 py-2 text-slate-200 focus:border-emerald-500/50 outline-none"
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block">Last Name</label>
+            <label className="text-[11px] font-mono text-slate-400 block uppercase tracking-wider">Last Name</label>
             <input 
-              type="text" 
-              required 
-              value={formData.lastName} 
-              onChange={e => setFormData({...formData, lastName: e.target.value})} 
-              className="w-full px-3.5 py-2.5 bg-[#090b14] border border-white/[0.07] rounded-xl text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-emerald-500/50" 
+              required type="text" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})}
+              className="w-full bg-[#090c14] border border-white/[0.07] rounded-xl text-sm px-3.5 py-2 text-slate-200 focus:border-emerald-500/50 outline-none"
             />
           </div>
         </div>
-
         <div className="space-y-1.5">
-          <label className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block">Username</label>
-          <div className="relative">
-            <User className="absolute inset-y-0 left-3.5 my-auto w-4 h-4 text-slate-500" />
-            <input 
-              type="text" 
-              required 
-              value={formData.username} 
-              onChange={e => setFormData({...formData, username: e.target.value})} 
-              className="w-full pl-10 pr-4 py-2.5 bg-[#090b14] border border-white/[0.07] rounded-xl text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-emerald-500/50" 
-            />
-          </div>
+          <label className="text-[11px] font-mono text-slate-400 block uppercase tracking-wider">Username</label>
+          <input 
+            required type="text" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})}
+            className="w-full bg-[#090c14] border border-white/[0.07] rounded-xl text-sm px-3.5 py-2 text-slate-200 focus:border-emerald-500/50 outline-none"
+          />
         </div>
-
         <div className="space-y-1.5">
-          <label className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block">Email Address</label>
-          <div className="relative">
-            <Mail className="absolute inset-y-0 left-3.5 my-auto w-4 h-4 text-slate-500" />
-            <input 
-              type="email" 
-              required 
-              value={formData.email} 
-              onChange={e => setFormData({...formData, email: e.target.value})} 
-              className="w-full pl-10 pr-4 py-2.5 bg-[#090b14] border border-white/[0.07] rounded-xl text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-emerald-500/50" 
-            />
-          </div>
+          <label className="text-[11px] font-mono text-slate-400 block uppercase tracking-wider">Email Address</label>
+          <input 
+            required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
+            className="w-full bg-[#090c14] border border-white/[0.07] rounded-xl text-sm px-3.5 py-2 text-slate-200 focus:border-emerald-500/50 outline-none"
+          />
         </div>
-
         <div className="space-y-1.5">
-          <label className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block">Initial Security Password</label>
-          <div className="relative">
-            <Lock className="absolute inset-y-0 left-3.5 my-auto w-4 h-4 text-slate-500" />
-            <input 
-              type="password" 
-              required 
-              value={formData.password} 
-              onChange={e => setFormData({...formData, password: e.target.value})} 
-              className="w-full pl-10 pr-4 py-2.5 bg-[#090b14] border border-white/[0.07] rounded-xl text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-emerald-500/50 font-mono" 
-            />
-          </div>
+          <label className="text-[11px] font-mono text-slate-400 block uppercase tracking-wider">Initial Password</label>
+          <input 
+            required type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})}
+            className="w-full bg-[#090c14] border border-white/[0.07] rounded-xl text-sm px-3.5 py-2 text-slate-200 focus:border-emerald-500/50 outline-none"
+          />
         </div>
-
         <button 
-          type="submit" 
-          disabled={loading} 
-          className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-normal transition-all shadow-[0_0_20px_rgba(16,185,129,0.25)] flex items-center justify-center gap-2 disabled:opacity-50"
+          type="submit" disabled={loading}
+          className="w-full mt-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-normal flex items-center justify-center transition-all disabled:opacity-50"
         >
-          {loading ? <Loader className="w-4 h-4 animate-spin"/> : <>Generate Recruiter Credentials <ArrowRight className="w-3.5 h-3.5" /></>}
+          {loading ? <Loader className="w-4 h-4 animate-spin" /> : 'Provision Recruiter License'}
         </button>
       </form>
     </div>
@@ -394,125 +364,55 @@ const CreateRecruiterTab = () => {
 const GlobalJobsTab = () => {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [expandedJobId, setExpandedJobId] = useState(null);
-  const [deletingId, setDeletingId] = useState(null);
-  const [jobToDelete, setJobToDelete] = useState(null);
-  const [toast, setToast] = useState(null);
-
-  const fetchJobs = () => {
-    setLoading(true);
-    jobService.getAllJobs()
-      .then(res => setJobs(res))
-      .catch(err => console.error(err))
-      .finally(() => setLoading(false));
-  };
 
   useEffect(() => {
-    fetchJobs();
+    jobService.getAllJobs().then(setJobs).catch(()=>{}).finally(()=>setLoading(false));
   }, []);
 
-  const confirmDeleteJob = async () => {
-    if (!jobToDelete) return;
-    setDeletingId(jobToDelete.id);
-    try {
-      await jobService.deleteJob(jobToDelete.id);
-      setJobs(prev => prev.filter(j => j.id !== jobToDelete.id));
-      setToast({ type: 'success', text: `Job "${jobToDelete.title}" was permanently removed.` });
-      setJobToDelete(null);
-    } catch (err) {
-      setToast({ type: 'error', text: 'Failed to delete job: ' + (err.response?.data?.message || err.message) });
-    } finally {
-      setDeletingId(null);
-    }
-  };
+  if (loading) return <div className="flex justify-center p-16"><Loader className="w-6 h-6 animate-spin text-emerald-500" /></div>;
 
   return (
-    <div className="ai-card rounded-3xl p-6 sm:p-8 max-w-5xl mx-auto border border-white/[0.08] shadow-2xl pb-16">
-      <div className="mb-6 pb-4 border-b border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 pb-16 max-w-7xl mx-auto">
+      <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-lg font-light text-white tracking-tight">Global Jobs Oversight</h3>
-          <p className="text-xs text-slate-400 font-light mt-0.5">Comprehensive catalog of all job entities in the platform.</p>
+          <h3 className="text-xl font-light text-white">Global Job Registry</h3>
+          <p className="text-xs text-slate-400 mt-0.5">All active listings across the recruiter cluster.</p>
         </div>
-        <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-xl border border-emerald-500/20">
-          {jobs.length} Active Positions
+        <span className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg text-[11px] font-mono">
+          {jobs.length} Active Records
         </span>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center p-16"><Loader className="w-6 h-6 animate-spin text-emerald-500" /></div>
-      ) : jobs.length === 0 ? (
-        <div className="text-center p-12 text-slate-500">
-          <CheckSquare className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="text-xs font-light">No jobs deployed yet.</p>
-        </div>
-      ) : (
-        <div className="grid gap-3">
-          {jobs.map(job => (
-            <div key={job.id} className="bg-[#090b14] border border-white/[0.05] rounded-xl overflow-hidden hover:border-emerald-500/30 transition-all">
-              <div 
-                className="p-4 cursor-pointer hover:bg-white/[0.02] flex flex-col sm:flex-row justify-between sm:items-center gap-4 transition-colors" 
-                onClick={() => setExpandedJobId(expandedJobId === job.id ? null : job.id)}
-              >
-                <div>
-                  <h4 className="font-normal text-sm text-white">{job.title}</h4>
-                  <p className="text-xs text-slate-400 font-light mt-0.5">
-                    {job.companyName || 'HireNova Verified'} • <span className="font-mono text-[11px] text-slate-500">{job.location || 'India'}</span> • <span className="text-emerald-400 font-mono text-[11px]">₹ {job.salaryMin || 10}-{job.salaryMax || 18} LPA</span>
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-mono rounded uppercase">
-                    Active
-                  </span>
-                  <button
-                    onClick={(e) => {
-                      if (e) e.stopPropagation();
-                      setJobToDelete({ id: job.id, title: job.title });
-                    }}
-                    disabled={deletingId === job.id}
-                    title="Delete Job"
-                    className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-                  >
-                    {deletingId === job.id ? <Loader className="w-3.5 h-3.5 animate-spin text-rose-400" /> : <Trash2 className="w-3.5 h-3.5" />}
-                  </button>
-                  <div className="text-slate-500 text-xs">
-                    {expandedJobId === job.id ? <ChevronUp className="w-4 h-4"/> : <ChevronDown className="w-4 h-4"/>}
-                  </div>
-                </div>
-              </div>
-              {expandedJobId === job.id && (
-                <div className="px-4 pb-4 pt-2 border-t border-white/[0.04] space-y-3">
-                  <p className="text-xs text-slate-400 font-light whitespace-pre-wrap leading-relaxed">{job.description}</p>
-                  <div className="flex justify-end pt-2">
-                    <button
-                      onClick={(e) => {
-                        if (e) e.stopPropagation();
-                        setJobToDelete({ id: job.id, title: job.title });
-                      }}
-                      className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-lg text-xs font-normal transition-colors flex items-center gap-1.5"
-                    >
-                      <Trash2 className="w-3 h-3" /> Remove Position
-                    </button>
-                  </div>
-                </div>
-              )}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {jobs.map(job => (
+          <div key={job.id} className="ai-card p-5 rounded-2xl border border-white/[0.07] flex flex-col hover:border-emerald-500/30 transition-all">
+            <div className="mb-4 flex-1">
+              <h4 className="text-sm font-normal text-white">{job.title}</h4>
+              <p className="text-[11px] text-slate-400 mt-1">{job.companyName} • {job.location || 'Remote'}</p>
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* Delete Job Confirmation Modal Popup */}
-      <ConfirmModal
-        isOpen={Boolean(jobToDelete)}
-        onClose={() => !deletingId && setJobToDelete(null)}
-        onConfirm={confirmDeleteJob}
-        title="Delete Job Position"
-        message={`Are you sure you want to permanently delete "${jobToDelete?.title}"? This will also remove all associated candidate applications.`}
-        confirmText="Delete Position"
-        confirmStyle="danger"
-        loading={Boolean(deletingId)}
-      />
-
-      <ToastNotification toast={toast} onClose={() => setToast(null)} />
+            
+            <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-white/[0.05]">
+              <div className="text-center">
+                <p className="text-xs font-normal text-white">{job.vacancies || 0}</p>
+                <p className="text-[10px] text-slate-500 font-mono">Openings</p>
+              </div>
+              <div className="text-center border-l border-white/[0.05]">
+                <p className="text-xs font-normal text-slate-200">Yes</p>
+                <p className="text-[10px] text-slate-500 font-mono">AI Scan</p>
+              </div>
+              <div className="text-center border-l border-white/[0.05]">
+                <p className="text-xs font-normal text-emerald-400">Live</p>
+                <p className="text-[10px] text-slate-500 font-mono">Status</p>
+              </div>
+            </div>
+          </div>
+        ))}
+        {jobs.length === 0 && (
+          <div className="col-span-full py-16 text-center text-slate-500 text-sm font-light">
+            No global job records synchronized.
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -522,188 +422,151 @@ const GlobalInterviewsTab = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    jobService.getScheduledInterviews()
-      .then(res => setInterviews(res || []))
-      .catch(err => {
-        console.error(err);
-        return apiClient.get('/interviews').then(res => setInterviews(res.data)).catch(() => setInterviews([]));
-      })
-      .finally(() => setLoading(false));
+    apiClient.get('/interviews')
+      .then(res => setInterviews(res.data || []))
+      .catch(()=>{})
+      .finally(()=>setLoading(false));
   }, []);
 
+  if (loading) return <div className="flex justify-center p-16"><Loader className="w-6 h-6 animate-spin text-emerald-500" /></div>;
+
   return (
-    <div className="ai-card rounded-3xl p-6 sm:p-8 max-w-5xl mx-auto border border-white/[0.08] shadow-2xl pb-16">
-      <div className="mb-6 pb-4 border-b border-white/[0.06]">
-        <h3 className="text-lg font-light text-white tracking-tight">Global Interview Telemetry</h3>
-        <p className="text-xs text-slate-400 font-light mt-0.5">Cluster-wide log of scheduled candidate technical panels and interviews.</p>
+    <div className="space-y-6 pb-16 max-w-7xl mx-auto">
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-xl font-light text-white">Global Interview Telemetry</h3>
+          <p className="text-xs text-slate-400 mt-0.5">Live video stream sessions across the cluster.</p>
+        </div>
+        <span className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg text-[11px] font-mono">
+          {interviews.length} Booked
+        </span>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center p-16"><Loader className="w-6 h-6 animate-spin text-emerald-500" /></div>
-      ) : interviews.length === 0 ? (
-        <div className="text-center p-12 text-slate-500">
-          <Briefcase className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="text-xs font-light">No interviews recorded across the network.</p>
-        </div>
-      ) : (
-        <div className="grid gap-3">
-          {interviews.map(i => (
-            <div key={i.id} className="p-4 bg-[#090b14] border border-white/[0.05] rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h4 className="text-xs font-normal text-white">{i.roundName || `Interview Session #${i.id}`}</h4>
-                  <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono rounded uppercase">
-                    {i.status || 'SCHEDULED'}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mt-1">
-                  Candidate #{i.userId || i.candidateId} • <span className="text-slate-300 font-normal">{i.jobTitle}</span> ({i.companyName})
-                </p>
-                <div className="flex items-center gap-3 mt-1.5 text-[11px] font-mono text-slate-500">
-                  <span className="flex items-center gap-1 text-slate-400">
-                    <Clock className="w-3 h-3 text-emerald-400" />
-                    {i.interviewDate ? new Date(i.interviewDate).toLocaleString() : 'Date TBD'}
-                  </span>
-                  {i.interviewerName && <span>Lead: {i.interviewerName}</span>}
-                </div>
-              </div>
-
-              {i.meetingLink && (
-                <a
-                  href={i.meetingLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3.5 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 rounded-xl text-xs font-normal transition-all flex items-center gap-1.5 shrink-0"
-                >
-                  <Video className="w-3.5 h-3.5" /> Room Link <ExternalLink className="w-3 h-3" />
-                </a>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="bg-[#090b14] rounded-2xl border border-white/[0.07] overflow-hidden">
+        {interviews.length === 0 ? (
+           <div className="py-16 text-center text-slate-500 text-sm font-light">
+             No active interviews logged on the main node.
+           </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-white/[0.02] border-b border-white/[0.05]">
+                  <th className="p-4 text-[11px] font-mono text-slate-400 font-semibold tracking-wider uppercase">Candidate ID</th>
+                  <th className="p-4 text-[11px] font-mono text-slate-400 font-semibold tracking-wider uppercase">Job ID</th>
+                  <th className="p-4 text-[11px] font-mono text-slate-400 font-semibold tracking-wider uppercase">Event Time</th>
+                  <th className="p-4 text-[11px] font-mono text-slate-400 font-semibold tracking-wider uppercase">Meet Scope</th>
+                  <th className="p-4 text-[11px] font-mono text-slate-400 font-semibold tracking-wider uppercase">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.05]">
+                {interviews.map((iv) => (
+                  <tr key={iv.id} className="hover:bg-white/[0.01] transition-colors">
+                    <td className="p-4 text-xs text-slate-300 font-mono">#{iv.candidateId}</td>
+                    <td className="p-4 text-xs text-slate-300 font-mono">#{iv.jobId}</td>
+                    <td className="p-4 text-xs text-slate-300">{new Date(iv.scheduledTime).toLocaleString()}</td>
+                    <td className="p-4">
+                      {iv.meetingLink ? (
+                        <a href={iv.meetingLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300">
+                          <Video className="w-3.5 h-3.5" /> Room Link
+                        </a>
+                      ) : <span className="text-xs text-slate-600 font-light">TBA</span>}
+                    </td>
+                    <td className="p-4">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono border ${
+                        iv.status === 'SCHEDULED' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
+                        iv.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                        'bg-slate-500/10 text-slate-400 border-slate-500/20'
+                      }`}>
+                        {iv.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
 const ProfileTab = ({ username }) => {
-  const [profileData, setProfileData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [passForm, setPassForm] = useState({ oldPassword: '', newPassword: '' });
-  const [passStatus, setPassStatus] = useState(null);
-  const [passLoading, setPassLoading] = useState(false);
-
-  useEffect(() => {
-    authService.getProfile().then(res => setProfileData(res)).finally(() => setLoading(false));
-  }, []);
-
-  const handlePasswordChange = async (e) => {
-    e.preventDefault();
-    setPassLoading(true);
-    setPassStatus(null);
-    try {
-      await authService.changePassword(passForm);
-      setPassStatus({ type: 'success', text: 'Admin security credentials updated.' });
-      setPassForm({ oldPassword: '', newPassword: '' });
-    } catch (err) {
-      setPassStatus({ type: 'error', text: err.response?.data || 'Credential update failed.' });
-    } finally {
-      setPassLoading(false);
-    }
-  };
-
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-20">
-      <div>
-        <h3 className="text-xl font-light text-white tracking-tight">Super Administrator Profile</h3>
-        <p className="text-xs text-slate-400 font-light mt-0.5">System privilege controls and access management.</p>
-      </div>
-
-      {loading ? (
-        <div className="flex justify-center p-12"><Loader className="w-6 h-6 animate-spin text-emerald-500" /></div>
-      ) : profileData && typeof profileData === 'object' && profileData.email ? (
-        <div className="space-y-6">
-          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <InfoCard label="First Name" value={profileData.firstName} />
-            <InfoCard label="Last Name" value={profileData.lastName} />
-            <InfoCard label="System Handle" value={`@${profileData.username}`} />
-            <InfoCard label="Root Email" value={profileData.email} isEmail />
+    <div className="max-w-2xl mx-auto space-y-6 pb-16">
+      <div className="ai-card rounded-3xl border border-white/[0.08] shadow-2xl overflow-hidden relative">
+        <div className="h-32 bg-gradient-to-r from-emerald-900/40 via-teal-900/40 to-slate-900/40 relative">
+          <div className="absolute inset-0 bg-ai-grid opacity-30" />
+        </div>
+        
+        <div className="px-6 sm:px-8 pb-8 relative -mt-12">
+          <div className="w-24 h-24 rounded-2xl bg-[#090b14] border border-white/[0.1] shadow-2xl flex items-center justify-center p-1 mb-6 relative">
+             <div className="absolute inset-0 bg-emerald-500/20 blur-xl rounded-2xl" />
+             <div className="w-full h-full rounded-xl bg-gradient-to-br from-emerald-600 to-teal-800 flex items-center justify-center text-4xl text-white font-light relative z-10">
+               {username.charAt(0).toUpperCase()}
+             </div>
           </div>
 
-          <div className="ai-card rounded-2xl p-6 border border-white/[0.08] max-w-xl">
-            <h4 className="text-xs font-mono uppercase tracking-widest text-slate-400 mb-4 pb-2 border-b border-white/[0.06]">
-              Update Root Administrative Credentials
-            </h4>
-            <form onSubmit={handlePasswordChange} className="space-y-3">
-              {passStatus && (
-                <div className={`p-2.5 text-[11px] font-mono rounded-lg ${passStatus.type === 'success' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                  {passStatus.text}
-                </div>
-              )}
-              <input 
-                type="password" 
-                placeholder="Current Password" 
-                required 
-                value={passForm.oldPassword} 
-                onChange={e => setPassForm({...passForm, oldPassword: e.target.value})} 
-                className="w-full px-3.5 py-2 bg-[#090b14] border border-white/[0.07] rounded-xl text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-emerald-500/40" 
-              />
-              <input 
-                type="password" 
-                placeholder="New Root Password" 
-                required 
-                value={passForm.newPassword} 
-                onChange={e => setPassForm({...passForm, newPassword: e.target.value})} 
-                className="w-full px-3.5 py-2 bg-[#090b14] border border-white/[0.07] rounded-xl text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-emerald-500/40" 
-              />
-              <button 
-                type="submit" 
-                disabled={passLoading} 
-                className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-normal transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)] disabled:opacity-50"
-              >
-                {passLoading ? <Loader className="w-3.5 h-3.5 animate-spin"/> : 'Update Credentials'}
-              </button>
-            </form>
+          <div>
+             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-mono rounded-full mb-3">
+               <ShieldCheck className="w-3 h-3" /> VERIFIED SUPER ADMIN
+             </div>
+             <h3 className="text-2xl font-light text-white mb-1">{username}</h3>
+             <p className="text-sm text-slate-400">HireNova Platform Administrator</p>
+          </div>
+
+          <div className="mt-8 space-y-3">
+             <div className="flex items-center justify-between p-4 bg-[#090b14] rounded-xl border border-white/[0.05]">
+               <div className="flex items-center gap-3 text-sm text-slate-300">
+                 <Lock className="w-4 h-4 text-slate-500" /> Administrative Rights
+               </div>
+               <span className="text-emerald-400 text-xs">Full Global Access</span>
+             </div>
+             <div className="flex items-center justify-between p-4 bg-[#090b14] rounded-xl border border-white/[0.05]">
+               <div className="flex items-center gap-3 text-sm text-slate-300">
+                 <Cpu className="w-4 h-4 text-slate-500" /> System Control Level
+               </div>
+               <span className="text-emerald-400 text-xs">Level 5 (Unrestricted)</span>
+             </div>
+             <div className="flex items-center justify-between p-4 bg-[#090b14] rounded-xl border border-white/[0.05]">
+               <div className="flex items-center gap-3 text-sm text-slate-300">
+                 <ShieldAlert className="w-4 h-4 text-slate-500" /> Database Deletion Rights
+               </div>
+               <span className="text-indigo-400 text-xs">Enabled & Active</span>
+             </div>
           </div>
         </div>
-      ) : null}
+      </div>
     </div>
   );
 };
 
-const InfoCard = ({ label, value, isEmail }) => (
-  <div className="p-4 rounded-xl bg-[#090b14] border border-white/[0.06]">
-    <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest block mb-1">{label}</span>
-    <span className={`text-xs font-normal ${isEmail ? 'text-emerald-400 break-all' : 'text-slate-200'}`}>{value}</span>
-  </div>
-);
-
 const StatCard = ({ title, value, trend }) => (
-  <div className="ai-card p-5 rounded-2xl border border-white/[0.07]">
-    <span className="text-[10px] font-mono uppercase tracking-widest text-slate-500 block mb-2">{title}</span>
-    <div className="flex items-baseline justify-between">
-      <span className="text-2xl font-light text-white font-mono">{value}</span>
-      {trend && (
-        <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
-          {trend}
-        </span>
-      )}
+  <div className="ai-card p-5 rounded-2xl border border-white/[0.07] relative overflow-hidden group hover:border-emerald-500/30 transition-all">
+    <div className="absolute -top-10 -right-10 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition-colors" />
+    <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">{title}</span>
+    <div className="mt-4 flex items-end gap-3">
+      <span className="text-3xl font-light text-white leading-none">{value}</span>
+      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono tracking-wider border border-emerald-500/20 mb-1">
+        {trend}
+      </span>
     </div>
   </div>
 );
 
 const SidebarItem = ({ icon: Icon, label, active, onClick, collapsed }) => (
   <button 
-    onClick={onClick} 
-    title={collapsed ? label : ""}
-    className={`w-full flex items-center p-2.5 rounded-xl transition-all text-xs font-normal ${
+    onClick={onClick}
+    className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-sm font-normal group relative ${
       active 
-        ? 'bg-emerald-600/20 border border-emerald-500/30 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.15)]' 
-        : 'text-slate-400 hover:bg-white/[0.03] hover:text-slate-200'
-    } ${collapsed ? 'justify-center' : 'gap-3 px-3.5'}`}
+        ? 'bg-emerald-600/10 text-emerald-400' 
+        : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
+    } ${collapsed ? 'justify-center' : ''}`}
   >
-    <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-emerald-300' : 'text-slate-500'}`} /> 
-    {!collapsed && <span>{label}</span>}
+    {active && !collapsed && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-emerald-500 rounded-r-full" />}
+    <Icon className={`w-4 h-4 shrink-0 transition-transform ${active ? 'scale-110' : 'group-hover:scale-110'}`} />
+    {!collapsed && <span className="text-left leading-tight">{label}</span>}
   </button>
 );
 
