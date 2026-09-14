@@ -12,7 +12,8 @@ import {
   ArrowLeft,
   KeyRound,
   Eye,
-  EyeOff
+  EyeOff,
+  ShieldCheck
 } from 'lucide-react';
 import { authService } from '../services/authService';
 
@@ -31,7 +32,7 @@ const Login = () => {
   const [resetCode, setResetCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [forgotStep, setForgotStep] = useState(1); // 1 = enter email, 2 = enter code & new pass
+  const [forgotStep, setForgotStep] = useState(1);
   const [isForgotLoading, setIsForgotLoading] = useState(false);
   const [forgotMsg, setForgotMsg] = useState(null);
 
@@ -55,7 +56,7 @@ const Login = () => {
       setPopup({ 
         show: true, 
         type: 'success', 
-        message: 'Authentication successful. Redirecting to your workspace...' 
+        message: 'Authentication successful! Redirecting to your workspace...' 
       });
 
       setTimeout(() => {
@@ -159,7 +160,7 @@ const Login = () => {
     } catch (err) {
       setForgotMsg({
         type: 'error',
-        text: err.response?.data?.message || err.message || 'Password update failed. Check key & try again.'
+        text: err.response?.data?.message || err.message || 'Failed to reset password. Please check your 6-digit key.'
       });
     } finally {
       setIsForgotLoading(false);
@@ -167,52 +168,49 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#07080d] text-slate-200 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200 relative overflow-x-hidden bg-ai-grid">
+    <div className="min-h-screen bg-[#f6f8fa] text-slate-900 flex flex-col font-sans selection:bg-emerald-100 selection:text-emerald-900 relative overflow-x-hidden bg-ai-grid">
       
-      {/* Ambient glow */}
-      <div className="fixed top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-indigo-600/10 blur-[140px] rounded-full pointer-events-none" />
-      <div className="fixed bottom-10 right-10 w-[350px] h-[300px] bg-purple-600/5 blur-[150px] rounded-full pointer-events-none" />
+      {/* Subtle ambient lighting */}
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-gradient-to-b from-emerald-100/40 via-indigo-50/20 to-transparent blur-[120px] rounded-full pointer-events-none -z-10" />
 
       {/* Top Header */}
       <header className="p-6 md:p-8 flex items-center justify-between max-w-6xl mx-auto w-full relative z-20">
-        <Link to="/" className="inline-flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center p-0.5 shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-            <Bot className="w-5 h-5 text-white" />
+        <Link to="/" className="inline-flex items-center gap-2.5 group">
+          <div className="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center p-0.5 shadow-sm group-hover:scale-105 transition-transform">
+            <Bot className="w-5 h-5 text-emerald-400" />
           </div>
-          <span className="text-base font-medium tracking-tight text-white flex items-center gap-1.5">
-            HireNova <span className="text-[10px] font-mono font-normal uppercase tracking-widest text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded">AI</span>
+          <span className="text-lg font-bold tracking-tight text-slate-900 flex items-center gap-2">
+            HireNova <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">AI Studio</span>
           </span>
         </Link>
 
         <Link 
           to="/" 
-          className="inline-flex items-center gap-1.5 text-xs font-normal text-slate-400 hover:text-white transition-colors bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.12] px-3 py-1.5 rounded-lg"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors bg-white border border-slate-200 hover:border-slate-300 px-3.5 py-2 rounded-xl shadow-xs"
         >
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Home
         </Link>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center p-4 relative z-10">
-        <div className="w-full max-w-md ai-card rounded-3xl p-8 sm:p-10 border border-white/[0.09] shadow-[0_15px_50px_rgba(0,0,0,0.6)] relative overflow-hidden">
+      <main className="flex-1 flex items-center justify-center p-4 relative z-10 pb-16">
+        <div className="w-full max-w-md bg-white rounded-3xl p-8 sm:p-10 border border-slate-200 shadow-[0_10px_35px_-5px_rgba(15,23,42,0.08)] relative">
           
-          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent" />
-
           <div className="mb-8 text-center">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.03] border border-white/[0.06] text-slate-400 text-[11px] font-mono mb-3">
-              <Sparkles className="w-3 h-3 text-indigo-400" /> SECURE AI AUTHENTICATION
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold mb-3.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> SECURE RECRUITMENT PORTAL
             </div>
-            <h1 className="text-2xl sm:text-3xl font-light text-white tracking-tight">Access Workspace</h1>
-            <p className="text-xs text-slate-400 font-light mt-1.5">Enter your credentials to enter your dedicated recruitment portal.</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Welcome to Studio</h1>
+            <p className="text-sm text-slate-600 font-normal mt-1.5">Enter your credentials to access your autonomous workspace.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             
             {/* Email Address */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block">Work / User Email</label>
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 block">Work / User Email</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                   <Mail className="w-4 h-4" />
                 </div>
                 <input 
@@ -221,7 +219,7 @@ const Login = () => {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-2.5 bg-[#090c14] border border-white/[0.07] rounded-xl text-sm text-slate-200 placeholder:text-slate-600 font-light focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/30 transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50/60 border border-slate-300 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 font-medium focus:bg-white focus:outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/10 transition-all"
                   placeholder="name@company.com"
                 />
               </div>
@@ -230,17 +228,17 @@ const Login = () => {
             {/* Password */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block">Password</label>
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 block">Password</label>
                 <button
                   type="button"
                   onClick={handleOpenForgotModal}
-                  className="text-[11px] text-indigo-400 hover:text-indigo-300 transition-colors"
+                  className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition-colors"
                 >
                   Forgot password?
                 </button>
               </div>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                   <Lock className="w-4 h-4" />
                 </div>
                 <input 
@@ -249,13 +247,13 @@ const Login = () => {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-10 py-2.5 bg-[#090c14] border border-white/[0.07] rounded-xl text-sm text-slate-200 placeholder:text-slate-600 font-light focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/30 transition-all"
+                  className="w-full pl-10 pr-10 py-2.5 bg-slate-50/60 border border-slate-300 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 font-medium focus:bg-white focus:outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/10 transition-all"
                   placeholder="••••••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -265,23 +263,23 @@ const Login = () => {
             <button 
               type="submit"
               disabled={isLoading}
-              className="w-full mt-2 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-normal flex items-center justify-center gap-2 transition-all shadow-[0_0_25px_rgba(99,102,241,0.25)] hover:shadow-[0_0_35px_rgba(99,102,241,0.4)] disabled:opacity-50 disabled:cursor-not-allowed group"
+              className="w-full mt-2 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed group"
             >
               {isLoading ? (
                 <Loader className="w-4 h-4 animate-spin text-white" />
               ) : (
                 <>
-                  Sign In to System
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                  Sign In to Studio
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform text-emerald-400" />
                 </>
               )}
             </button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-white/[0.06] text-center">
-            <p className="text-xs text-slate-400 font-light">
+          <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+            <p className="text-xs text-slate-600 font-medium">
               Don't have an account yet?{' '}
-              <Link to="/register" className="text-indigo-400 hover:text-indigo-300 font-normal transition-colors">
+              <Link to="/register" className="text-emerald-700 hover:text-emerald-800 font-semibold transition-colors">
                 Candidate Registration
               </Link>
             </p>
@@ -291,28 +289,28 @@ const Login = () => {
 
       {/* Forgot Password Modal */}
       {showForgotModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="ai-card rounded-2xl p-6 sm:p-8 max-w-md w-full border border-white/[0.1] shadow-2xl relative">
-            <div className="flex items-center justify-between pb-4 border-b border-white/[0.06] mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-slate-200 shadow-2xl relative">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-                  <KeyRound className="w-4 h-4 text-indigo-400" />
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                  <KeyRound className="w-4 h-4 text-emerald-700" />
                 </div>
                 <div>
-                  <h3 className="text-base font-normal text-white">Reset Account Key</h3>
-                  <p className="text-[11px] text-slate-400 font-light">Verify identity via one-time 6-digit key</p>
+                  <h3 className="text-base font-bold text-slate-900">Reset Account Key</h3>
+                  <p className="text-xs text-slate-600 font-normal">Verify identity via one-time 6-digit key</p>
                 </div>
               </div>
               <button 
                 onClick={() => setShowForgotModal(false)}
-                className="text-slate-400 hover:text-white text-xs px-2 py-1 rounded bg-white/[0.04] border border-white/[0.08]"
+                className="text-slate-500 hover:text-slate-800 text-xs px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 font-medium"
               >
                 Close
               </button>
             </div>
 
             {forgotMsg && (
-              <div className={`p-3 rounded-xl mb-4 text-xs ${forgotMsg.type === 'error' ? 'bg-rose-500/10 border border-rose-500/20 text-rose-300' : forgotMsg.type === 'success' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300' : 'bg-indigo-500/10 border border-indigo-500/20 text-indigo-300'}`}>
+              <div className={`p-3 rounded-xl mb-4 text-xs font-medium ${forgotMsg.type === 'error' ? 'bg-rose-50 border border-rose-200 text-rose-800' : forgotMsg.type === 'success' ? 'bg-emerald-50 border border-emerald-200 text-emerald-800' : 'bg-indigo-50 border border-indigo-200 text-indigo-800'}`}>
                 {forgotMsg.text}
               </div>
             )}
@@ -320,21 +318,21 @@ const Login = () => {
             {forgotStep === 1 ? (
               <form onSubmit={handleRequestResetCode} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block">Registered Email Address</label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 block">Registered Email Address</label>
                   <input 
                     type="email"
                     required
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
                     placeholder="name@company.com"
-                    className="w-full px-3.5 py-2.5 bg-[#090c14] border border-white/[0.07] rounded-xl text-sm text-slate-200 placeholder:text-slate-600 font-light focus:outline-none focus:border-indigo-500/50 transition-all"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 font-medium focus:bg-white focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 transition-all"
                   />
                 </div>
 
                 <button 
                   type="submit"
                   disabled={isForgotLoading}
-                  className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-normal flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(99,102,241,0.25)]"
+                  className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-sm"
                 >
                   {isForgotLoading ? <Loader className="w-3.5 h-3.5 animate-spin" /> : 'Send 6-Digit Reset Key'}
                 </button>
@@ -342,7 +340,7 @@ const Login = () => {
             ) : (
               <form onSubmit={handleConfirmPasswordReset} className="space-y-3.5">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block">6-Digit Security Key</label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 block">6-Digit Security Key</label>
                   <input 
                     type="text"
                     maxLength={6}
@@ -350,31 +348,31 @@ const Login = () => {
                     value={resetCode}
                     onChange={(e) => setResetCode(e.target.value)}
                     placeholder="123456"
-                    className="w-full px-3.5 py-2.5 bg-[#090c14] border border-indigo-500/40 rounded-xl text-sm font-mono tracking-widest text-center text-white placeholder:text-slate-600 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-emerald-300 rounded-xl text-base font-mono tracking-widest text-center text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-emerald-600"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block">New Password</label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 block">New Password</label>
                   <input 
                     type="password"
                     required
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="At least 6 characters"
-                    className="w-full px-3.5 py-2 bg-[#090c14] border border-white/[0.07] rounded-xl text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 font-medium focus:bg-white focus:outline-none focus:border-emerald-600"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block">Confirm New Password</label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 block">Confirm New Password</label>
                   <input 
                     type="password"
                     required
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Repeat new password"
-                    className="w-full px-3.5 py-2 bg-[#090c14] border border-white/[0.07] rounded-xl text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 font-medium focus:bg-white focus:outline-none focus:border-emerald-600"
                   />
                 </div>
 
@@ -382,14 +380,14 @@ const Login = () => {
                   <button 
                     type="button"
                     onClick={() => setForgotStep(1)}
-                    className="w-1/3 py-2 bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 rounded-xl text-xs"
+                    className="w-1/3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-medium"
                   >
                     Back
                   </button>
                   <button 
                     type="submit"
                     disabled={isForgotLoading}
-                    className="w-2/3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs flex items-center justify-center gap-2"
+                    className="w-2/3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2"
                   >
                     {isForgotLoading ? <Loader className="w-3.5 h-3.5 animate-spin" /> : 'Update Password'}
                   </button>
@@ -402,19 +400,19 @@ const Login = () => {
 
       {/* Popup Modal */}
       {popup.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md transition-all">
-          <div className="ai-card-glow rounded-2xl p-6 max-w-sm w-full border border-white/[0.1] shadow-2xl flex flex-col items-center text-center animate-in zoom-in duration-200">
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 ${popup.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-all">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full border border-slate-200 shadow-2xl flex flex-col items-center text-center animate-in zoom-in duration-200">
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 ${popup.type === 'success' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'}`}>
               {popup.type === 'success' ? <CheckCircle className="w-6 h-6" /> : <XCircle className="w-6 h-6" />}
             </div>
-            <h3 className="text-lg font-normal text-white mb-1.5">
+            <h3 className="text-lg font-bold text-slate-900 mb-1.5">
               {popup.type === 'success' ? 'Authenticated' : 'Access Denied'}
             </h3>
-            <p className="text-xs text-slate-400 font-light mb-6 leading-relaxed">{popup.message}</p>
+            <p className="text-xs text-slate-600 font-medium mb-6 leading-relaxed">{popup.message}</p>
             
             <button 
               onClick={() => setPopup({ show: false, type: '', message: '' })}
-              className="w-full py-2 bg-[#121524] hover:bg-[#1a1f33] text-slate-300 hover:text-white rounded-xl text-xs font-normal transition-colors border border-white/[0.08]"
+              className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm"
             >
               {popup.type === 'success' ? 'Continue' : 'Try Again'}
             </button>
