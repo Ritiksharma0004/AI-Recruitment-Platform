@@ -107,13 +107,9 @@ const Login = () => {
 
     try {
       const res = await authService.forgotPassword(forgotEmail);
-      if (res?.devResetCode) {
-        setResetCode(res.devResetCode);
-      } else {
-        setResetCode('');
-      }
+      setResetCode(''); // Strictly blank out code for security
       setForgotMsg({
-        type: 'info',
+        type: 'success',
         text: res?.message || ('A 6-digit security key has been dispatched to ' + forgotEmail + '. Please check your inbox and enter it below.')
       });
       setForgotStep(2);

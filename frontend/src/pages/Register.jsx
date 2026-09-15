@@ -65,7 +65,6 @@ const Register = () => {
       [name]: value
     }));
 
-    // If user changes email, reset OTP verification status
     if (name === 'email' && otpSent) {
       setOtpSent(false);
       setOtp('');
@@ -91,14 +90,9 @@ const Register = () => {
       setOtpSent(true);
       setOtpCountdown(60);
       
-      // Auto-fill OTP in Dev Environment bypass
-      if (res?.devOtpCode) {
-        setOtp(res.devOtpCode);
-      }
-
       setPopup({
         show: true,
-        type: res?.devOtpCode ? 'info' : 'success', // If bypassed, show info color
+        type: 'success',
         message: res?.message || `A 6-digit verification code has been dispatched to ${formData.email.trim()}. Please check your inbox and spam folder.`
       });
     } catch (err) {
@@ -390,15 +384,13 @@ const Register = () => {
             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 border ${
               popup.type === 'success' 
                 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
-                : popup.type === 'info'
-                ? 'bg-blue-500/10 border-blue-500/20 text-blue-400'
                 : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
             }`}>
-              {popup.type === 'success' ? <CheckCircle className="w-6 h-6" /> : popup.type === 'info' ? <ShieldCheck className="w-6 h-6" /> : <XCircle className="w-6 h-6" />}
+              {popup.type === 'success' ? <CheckCircle className="w-6 h-6" /> : <XCircle className="w-6 h-6" />}
             </div>
             
             <h3 className="text-lg font-normal text-white mb-1">
-              {popup.type === 'success' ? 'Verification Sent' : popup.type === 'info' ? 'Dev Verification Issued' : 'Deployment Failed'}
+              {popup.type === 'success' ? 'Verification Sent' : 'Deployment Failed'}
             </h3>
             
             <p className="text-xs text-slate-400 font-light mb-6 leading-relaxed">

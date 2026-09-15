@@ -60,17 +60,15 @@ public class AuthenticationService {
 
         boolean emailSent = emailService.sendRegistrationOtpEmail(normalizedEmail, rawOtp);
 
+        if (!emailSent) {
+            log.error("Failed to send registration OTP email to {}", normalizedEmail);
+            throw new RuntimeException("Unable to send verification email. Mail delivery service is currently unavailable.");
+        }
+
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
         response.put("email", normalizedEmail);
-        
-        if (!emailSent) {
-            log.warn("Failed to send registration OTP email to {} - likely due to Resend limit. Falling back to dev bypass.", normalizedEmail);
-            response.put("message", "Email service unavailable. DEV BYPASS: Your OTP code is " + rawOtp);
-            response.put("devOtpCode", rawOtp); 
-        } else {
-            response.put("message", "A 6-digit verification code has been dispatched to " + normalizedEmail);
-        }
+        response.put("message", "A 6-digit verification code has been dispatched to " + normalizedEmail);
 
         return response;
     }
@@ -202,17 +200,15 @@ public class AuthenticationService {
         
         boolean emailSent = emailService.sendPasswordResetEmail(normalizedEmail, rawCode);
         
+        if (!emailSent) {
+            log.error("Failed to send password reset email to {}", normalizedEmail);
+            throw new RuntimeException("Unable to deliver password reset email. Mail delivery service is currently unavailable.");
+        }
+        
         Map<String, Object> res = new HashMap<>();
         res.put("success", true);
         res.put("email", normalizedEmail);
-        
-        if (!emailSent) {
-            log.warn("Failed to send password reset email to {} - falling back to DEV BYPASS", normalizedEmail);
-            res.put("message", "Email service unavailable. DEV BYPASS: Your reset code is " + rawCode);
-            res.put("devResetCode", rawCode); 
-        } else {
-            res.put("message", "A 6-digit security reset key has been sent to " + normalizedEmail + ".");
-        }
+        res.put("message", "A 6-digit security reset key has been sent to " + normalizedEmail + ".");
 
         return res;
     }
