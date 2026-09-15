@@ -22,46 +22,54 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${resend.api.key:}")
-    private String resendApiKey;
+    @Value("${brevo.api.key:}")
+    private String brevoApiKey;
 
-    @Value("${resend.from.email:HireNova AI <onboarding@resend.dev>}")
-    private String resendFromEmail;
+    @Value("${brevo.from.email:ritik.sde.sharma@gmail.com}")
+    private String brevoFromEmail;
 
     @Value("${spring.mail.username:Ritik.sde.sharma@gmail.com}")
     private String fromEmail;
 
-    private boolean sendViaResend(String toEmail, String subject, String htmlBody) {
-        if (resendApiKey == null || resendApiKey.trim().isEmpty()) {
+    private boolean sendViaBrevo(String toEmail, String subject, String htmlBody) {
+        if (brevoApiKey == null || brevoApiKey.trim().isEmpty()) {
             return false;
         }
 
         try {
-            log.info("🚀 Dispatching email to {} via Resend REST API (Port 443 / HTTPS)...", toEmail);
-            String url = "https://api.resend.com/emails";
+            log.info("🚀 Dispatching email to {} via Brevo REST API (HTTPS/443)...", toEmail);
+            String url = "https://api.brevo.com/v3/smtp/email";
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setBearerAuth(resendApiKey.trim());
+            headers.set("api-key", brevoApiKey.trim());
+            headers.set("accept", "application/json");
+
+            Map<String, Object> sender = new HashMap<>();
+            sender.put("name", "HireNova AI");
+            sender.put("email", brevoFromEmail);
+
+            Map<String, Object> to = new HashMap<>();
+            to.put("email", toEmail);
 
             Map<String, Object> body = new HashMap<>();
-            body.put("from", resendFromEmail);
-            body.put("to", Collections.singletonList(toEmail));
+            body.put("sender", sender);
+            body.put("to", Collections.singletonList(to));
             body.put("subject", subject);
-            body.put("html", htmlBody);
+            body.put("htmlContent", htmlBody);
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
             ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
 
             if (response.getStatusCode().is2xxSuccessful()) {
-                log.info("✅ Resend API successfully accepted email for {}. Response: {}", toEmail, response.getBody());
+                log.info("✅ Brevo API successfully accepted email for {}. Response: {}", toEmail, response.getBody());
                 return true;
             } else {
-                log.warn("⚠️ Resend API responded with status {}: {}", response.getStatusCode(), response.getBody());
+                log.warn("⚠️ Brevo API responded with status {}: {}", response.getStatusCode(), response.getBody());
                 return false;
             }
         } catch (Exception e) {
-            log.error("⚠️ Resend API dispatch error for {}: {}", toEmail, e.getMessage());
+            log.error("⚠️ Brevo API dispatch error for {}: {}", toEmail, e.getMessage());
             return false;
         }
     }
@@ -117,8 +125,8 @@ public class EmailService {
                 + "</body>"
                 + "</html>";
 
-        // Try Resend HTTPS REST API first (bypasses Render SMTP port blocks)
-        if (sendViaResend(targetEmail, subject, htmlBody)) {
+        // Try Brevo HTTPS REST API first (bypasses Render SMTP port blocks)
+        if (sendViaBrevo(targetEmail, subject, htmlBody)) {
             return true;
         }
 
@@ -157,8 +165,8 @@ public class EmailService {
                 + "</body>"
                 + "</html>";
 
-        // Try Resend HTTPS REST API first (bypasses Render SMTP port blocks)
-        if (sendViaResend(targetEmail, subject, htmlBody)) {
+        // Try Brevo HTTPS REST API first (bypasses Render SMTP port blocks)
+        if (sendViaBrevo(targetEmail, subject, htmlBody)) {
             return true;
         }
 
