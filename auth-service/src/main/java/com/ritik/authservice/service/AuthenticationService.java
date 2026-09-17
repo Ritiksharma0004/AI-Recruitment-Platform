@@ -78,6 +78,7 @@ public class AuthenticationService {
             throw new RuntimeException("Email is required");
         }
         String normalizedEmail = request.getEmail().toLowerCase().trim();
+        request.setEmail(normalizedEmail);
 
         if (userRepository.existsByEmail(normalizedEmail)) {
             throw new RuntimeException("Email already exists");
@@ -111,7 +112,10 @@ public class AuthenticationService {
     }
 
     public String registerRecruiter(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        String normalizedEmail = request.getEmail() != null ? request.getEmail().toLowerCase().trim() : "";
+        request.setEmail(normalizedEmail);
+        
+        if (userRepository.existsByEmail(normalizedEmail)) {
             throw new RuntimeException("Email already exists");
         }
         if (userRepository.existsByUsername(request.getUsername())) {
@@ -125,7 +129,10 @@ public class AuthenticationService {
     }
 
     public String registerAdmin(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+         String normalizedEmail = request.getEmail() != null ? request.getEmail().toLowerCase().trim() : "";
+         request.setEmail(normalizedEmail);
+         
+        if (userRepository.existsByEmail(normalizedEmail)) {
             throw new RuntimeException("Email already exists");
         }
         if (userRepository.existsByUsername(request.getUsername())) {
@@ -152,11 +159,13 @@ public class AuthenticationService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+        String normalizedEmail = request.getEmail() != null ? request.getEmail().toLowerCase().trim() : "";
+        
+        User user = userRepository.findByEmail(normalizedEmail)
                 .orElseThrow(() -> new RuntimeException("Invalid email or password"));
 
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(normalizedEmail, request.getPassword())
         );
 
         String token = jwtService.generateToken(user.getId(), user.getEmail(), user.getUsername(), user.getRole().name());
@@ -164,7 +173,7 @@ public class AuthenticationService {
     }
     
     public Map<String, Object> getProfile(String email) {
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(email != null ? email.toLowerCase().trim() : "")
                 .orElseThrow(() -> new RuntimeException("User not found"));
         Map<String, Object> profile = new HashMap<>();        
         profile.put("id", user.getId());
