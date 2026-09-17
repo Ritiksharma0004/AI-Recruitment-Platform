@@ -16,7 +16,14 @@ apiClient.interceptors.request.use(
     const token = localStorage.getItem('token');
     const userStr = localStorage.getItem('user');
     
-    if (token) {
+    // Do not attach token for public auth routes to avoid backend crashing on expired jwt
+    const isAuthRoute = config.url.includes('/auth/login') || 
+                        config.url.includes('/auth/register') || 
+                        config.url.includes('/auth/send-registration-otp') || 
+                        config.url.includes('/auth/forgot-password') || 
+                        config.url.includes('/auth/reset-password');
+                        
+    if (token && !isAuthRoute) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     
@@ -48,53 +55,21 @@ apiClient.interceptors.response.use(
     if (!config) return Promise.reject(error);
 
     config.__retryCount = config.__retryCount || 0;
-    const isColdStart = error.response && [502, 503, 504].includes(error.response.status);
-    const isNetworkDrop = !error.response && (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error'));
+    
+    const isNetworkError = error.message === 'Network Error';
+    const is502 = error.response && error.response.status === 502;
+    const is503 = error.response && error.response.status === 503;
+    const is504 = error.response && error.response.status === 504;
 
-    if ((isColdStart || isNetworkDrop) && config.__retryCount < 3) {
+    if ((isNetworkError || is502 || is503 || is504) && config.__retryCount < 2) {
       config.__retryCount += 1;
-      const backoff = Math.min(2500 * config.__retryCount, 7500);
-      await new Promise((resolve) => setTimeout(resolve, backoff));
+      
+      const delay = Math.pow(2, config.__retryCount) * 1500;
+      await new Promise(resolve => setTimeout(resolve, delay));
+      
       return apiClient(config);
     }
-
+    
     return Promise.reject(error);
   }
 );
-
-export const aiClient = axios.create({
-  baseURL: AI_SERVICE_URL,
-  timeout: 75000,
-});
-
-aiClient.interceptors.request.use(
-  (config) => {
-    if (config.data instanceof FormData) {
-      delete config.headers['Content-Type'];
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-aiClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const config = error.config;
-    if (!config) return Promise.reject(error);
-
-    config.__retryCount = config.__retryCount || 0;
-    const isColdStart = error.response && [502, 503, 504].includes(error.response.status);
-
-    if (isColdStart && config.__retryCount < 3) {
-      config.__retryCount += 1;
-      const backoff = Math.min(2500 * config.__retryCount, 7500);
-      await new Promise((resolve) => setTimeout(resolve, backoff));
-      return aiClient(config);
-    }
-
-    return Promise.reject(error);
-  }
-);
-
-export { GATEWAY_URL, AI_SERVICE_URL };
